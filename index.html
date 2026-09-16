@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pelajaran Pak Yusac</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f6f8;
+            color: #333;
+        }
+
+        /* HEADER */
+
+        header {
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 17px;
+            opacity: 0.9;
+        }
+
+
+        /* NAVIGASI */
+
+        nav {
+            background: white;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        nav button {
+            border: none;
+            background: #eef2ff;
+            color: #3730a3;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        nav button:hover {
+            background: #4f46e5;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+
+        /* KONTEN */
+
+        main {
+            max-width: 1000px;
+            margin: auto;
+            padding: 30px 20px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+
+        /* CARD */
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.07);
+        }
+
+        .card h2 {
+            color: #3730a3;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            line-height: 1.7;
+        }
+
+
+        /* TOMBOL MATERI */
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(200px, 1fr));
+
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .menu-card {
+            background: #eef2ff;
+            border: 2px solid #c7d2fe;
+            padding: 20px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .menu-card:hover {
+            background: #e0e7ff;
+            transform: translateY(-3px);
+        }
+
+        .menu-card h3 {
+            color: #3730a3;
+            margin-bottom: 8px;
+        }
+
+        .menu-card p {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+
+        /* FOOTER */
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            margin-top: 30px;
+            background: #1e293b;
+            color: white;
+        }
+
+
+        /* HP */
+
+        @media (max-width: 600px) {
+
+            header h1 {
+                font-size: 28px;
+            }
+
+            nav button {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+
+            main {
+                padding: 20px 12px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- HEADER -->
+
+<header>
+
+    <h1>📚 Pelajaran Pak Yusac</h1>
+
+    <p>
+        Media pembelajaran digital untuk siswa
+    </p>
+
+</header>
+
+
+<!-- NAVIGASI -->
+
+<nav>
+
+    <button onclick="showPage('beranda')">
+        🏠 Beranda
+    </button>
+
+    <button onclick="showPage('materi')">
+        📖 Materi
+    </button>
+
+    <button onclick="showPage('game')">
+        🎮 Game
+    </button>
+
+    <button onclick="showPage('tugas')">
+        📝 Tugas
+    </button>
+
+    <button onclick="showPage('tentang')">
+        👨‍🏫 Tentang
+    </button>
+
+</nav>
+
+
+<!-- KONTEN -->
+
+<main>
+
+
+    <!-- BERANDA -->
+
+    <section id="beranda" class="page active">
+
+        <div class="card">
+
+            <h2>Selamat Datang 👋</h2>
+
+            <p>
+                Selamat datang di website
+                <b>Pelajaran Pak Yusac</b>.
+                Website ini digunakan sebagai media
+                untuk belajar, mengakses materi,
+                mengerjakan tugas, dan bermain game
+                edukasi.
+            </p>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>📌 Menu Pembelajaran</h2>
+
+            <div class="menu-grid">
+
+                <div class="menu-card"
+                     onclick="showPage('materi')">
+
+                    <h3>📖 Materi</h3>
+
+                    <p>
+                        Kumpulan materi pembelajaran.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card"
+                     onclick="showPage('game')">
+
+                    <h3>🎮 Game</h3>
+
+                    <p>
+                        Belajar sambil bermain.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card"
+                     onclick="showPage('tugas')">
+
+                    <h3>📝 Tugas</h3>
+
+                    <p>
+                        Informasi dan tugas siswa.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card"
+                     onclick="showPage('tentang')">
+
+                    <h3>👨‍🏫 Tentang</h3>
+
+                    <p>
+                        Informasi tentang guru.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- MATERI -->
+
+    <section id="materi" class="page">
+
+        <div class="card">
+
+            <h2>📖 Materi Pembelajaran</h2>
+
+            <p>
+                Pilih materi yang ingin dipelajari.
+            </p>
+
+            <div class="menu-grid">
+
+                <div class="menu-card">
+
+                    <h3>💻 Informatika</h3>
+
+                    <p>
+                        Materi Informatika dan teknologi.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card">
+
+                    <h3>🎨 DKV</h3>
+
+                    <p>
+                        Desain Komunikasi Visual.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card">
+
+                    <h3>💡 Kewirausahaan</h3>
+
+                    <p>
+                        Materi kewirausahaan dan bisnis.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card">
+
+                    <h3>⚖️ HAKI</h3>
+
+                    <p>
+                        Kekayaan Intelektual dan Hak Cipta.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- GAME -->
+
+    <section id="game" class="page">
+
+        <div class="card">
+
+            <h2>🎮 Game Edukasi</h2>
+
+            <p>
+                Belajar menjadi lebih menyenangkan
+                dengan game edukasi.
+            </p>
+
+            <div class="menu-grid">
+
+                <div class="menu-card">
+
+                    <h3>🎨 Game HAKI</h3>
+
+                    <p>
+                        Uji pengetahuanmu tentang
+                        Hak Kekayaan Intelektual.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card">
+
+                    <h3>🧠 Game Logika</h3>
+
+                    <p>
+                        Latihan logika dan pemecahan masalah.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card">
+
+                    <h3>📷 Game Fotografi</h3>
+
+                    <p>
+                        Kenali dasar-dasar fotografi.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- TUGAS -->
+
+    <section id="tugas" class="page">
+
+        <div class="card">
+
+            <h2>📝 Tugas Siswa</h2>
+
+            <p>
+                Daftar tugas pembelajaran.
+            </p>
+
+            <div class="menu-grid">
+
+                <div class="menu-card">
+
+                    <h3>Tugas 1</h3>
+
+                    <p>
+                        Membuat analisis desain.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card">
+
+                    <h3>Tugas 2</h3>
+
+                    <p>
+                        Membuat desain poster.
+                    </p>
+
+                </div>
+
+
+                <div class="menu-card">
+
+                    <h3>Tugas 3</h3>
+
+                    <p>
+                        Analisis HAKI pada karya desain.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- TENTANG -->
+
+    <section id="tentang" class="page">
+
+        <div class="card">
+
+            <h2>👨‍🏫 Tentang Pak Yusac</h2>
+
+            <p>
+                Website ini merupakan media pembelajaran
+                digital yang digunakan untuk membantu siswa
+                mendapatkan materi, tugas, dan aktivitas
+                pembelajaran secara lebih mudah.
+            </p>
+
+            <br>
+
+            <p>
+                <b>Pelajaran Pak Yusac</b>
+            </p>
+
+            <p>
+                Belajar • Berkarya • Berkreasi
+            </p>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+<!-- FOOTER -->
+
+<footer>
+
+    <p>
+        © 2026 Pelajaran Pak Yusac
+    </p>
+
+    <p>
+        Media Pembelajaran Digital
+    </p>
+
+</footer>
+
+
+
+<script>
+
+    function showPage(pageId) {
+
+        // Sembunyikan semua halaman
+
+        const pages =
+            document.querySelectorAll(".page");
+
+        pages.forEach(function(page) {
+
+            page.classList.remove("active");
+
+        });
+
+
+        // Tampilkan halaman yang dipilih
+
+        document
+            .getElementById(pageId)
+            .classList.add("active");
+
+
+        // Kembali ke atas halaman
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    }
+
+</script>
+
+
+</body>
+
+</html>
+```
