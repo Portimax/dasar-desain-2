@@ -1,0 +1,2758 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ulangan Harian HAKI - X DKV</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f3f4f6;margin:0;color:#222}
+.container{max-width:850px;margin:25px auto;padding:20px}
+.card{background:white;border-radius:14px;padding:24px;box-shadow:0 3px 15px #0001}
+h1{margin-top:0} input,select{width:100%;padding:12px;margin:7px 0 15px;box-sizing:border-box;border:1px solid #ccc;border-radius:8px}
+button{border:0;border-radius:8px;padding:12px 18px;cursor:pointer;font-weight:bold}
+.primary{background:#222;color:white} .secondary{background:#e5e7eb}
+.option{display:block;border:1px solid #ddd;padding:13px;margin:10px 0;border-radius:9px;cursor:pointer}
+.option:hover{background:#f5f5f5}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.timer{font-weight:bold;padding:9px 12px;background:#eee;border-radius:8px}
+.progress{height:8px;background:#ddd;border-radius:10px;margin:18px 0} .bar{height:100%;width:0;background:#222;border-radius:10px}
+.hidden{display:none} .score{font-size:40px;font-weight:bold;text-align:center}
+.small{color:#666;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="card" id="start">
+<h1>Ulangan Harian HAKI & Hak Cipta</h1>
+<p><b>Kelas X DKV</b></p>
+<p class="small">Setiap peserta memperoleh 30 soal.</p>
+<label>Nama</label><input id="name" placeholder="Nama lengkap">
+<label>Kelas</label><input id="class" placeholder="Contoh: X DKV 1">
+<label>Kode Ujian</label><input id="code" placeholder="Kode dari guru">
+<button class="primary" onclick="startExam()">Mulai Ulangan</button>
+<p id="startMsg" class="small"></p>
+</div>
+
+<div class="card hidden" id="exam">
+<div class="top"><b id="student"></b><span class="timer" id="timer">30:00</span></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<h3 id="number"></h3>
+<p id="question"></p>
+<div id="options"></div>
+<div class="top">
+<button class="secondary" onclick="prev()">Sebelumnya</button>
+<button class="primary" onclick="next()">Berikutnya</button>
+</div>
+</div>
+
+<div class="card hidden" id="result">
+<h1>Ulangan Selesai</h1>
+<p id="resultStudent"></p>
+<div class="score" id="score"></div>
+<p id="resultDetail" style="text-align:center"></p>
+<p class="small">Terimakasih sudah mengerjakan dengan baik.</p>
+<button class="primary" onclick="location.reload()">Selesai</button>
+</div>
+</div>
+
+<script>
+const BANK = [
+  {
+    "q": "Raka mendapat tugas membuat poster promosi produk sekolah. Ia menemukan foto makanan yang cocok melalui Google Images dan tidak melihat watermark. Apa yang sebaiknya dilakukan Raka sebelum menggunakan foto tersebut?",
+    "a": [
+      "Langsung menggunakan karena tidak ada watermark",
+      "Mengubah ukuran foto agar menjadi milik sendiri",
+      "Mencari sumber asli dan memeriksa izin atau lisensinya",
+      "Menggunakan foto karena Google Images memberikan izin"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Dinda menemukan font dengan keterangan 'Free for Personal Use'. Ia ingin menggunakannya untuk kemasan makanan yang akan dijual. Apa keputusan yang paling tepat?",
+    "a": [
+      "Menggunakannya karena semua font gratis boleh untuk komersial",
+      "Memeriksa apakah tersedia lisensi untuk penggunaan komersial",
+      "Menghapus nama pembuat font",
+      "Mengubah format font agar bebas digunakan"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Andi mengambil ilustrasi dari internet, mengubah warnanya, lalu memasukkannya ke poster dan mengaku sebagai pembuat ilustrasi tersebut. Masalah utama dalam tindakan Andi adalah...",
+    "a": [
+      "Ukuran file menjadi terlalu besar",
+      "Warna ilustrasi tidak sesuai teori warna",
+      "Resolusi poster menjadi rendah",
+      "Menggunakan karya orang lain dan mengakuinya sebagai karya sendiri"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Sebuah foto milik fotografer digunakan oleh siswa dalam poster tanpa memeriksa lisensinya. Poster tersebut kemudian digunakan untuk promosi produk sekolah. Mengapa tindakan tersebut berisiko?",
+    "a": [
+      "Penggunaan untuk promosi dapat memiliki ketentuan lisensi yang berbeda",
+      "Foto pasti akan kehilangan resolusinya",
+      "Poster tidak boleh menggunakan foto",
+      "Semua foto harus dibuat sendiri dengan kamera sekolah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Budi membeli sebuah template poster dari internet. Setelah membelinya, ia beranggapan bahwa seluruh hak cipta template otomatis menjadi miliknya. Bagaimana seharusnya ia memahami pembelian tersebut?",
+    "a": [
+      "Pembelian selalu berarti hak cipta berpindah",
+      "Template yang dibeli boleh dijual ulang tanpa batas",
+      "Ia memperoleh hak penggunaan sesuai lisensi yang diberikan",
+      "Semua pembeli menjadi pencipta template"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Sinta membuat logo untuk sebuah usaha. Klien meminta logo tersebut dibuat sangat mirip dengan logo pesaing. Sebagai desainer, tindakan yang paling tepat adalah...",
+    "a": [
+      "Menyalin logo kemudian mengganti warnanya",
+      "Menghapus logo pesaing dari internet",
+      "Menjelaskan risikonya dan menawarkan konsep yang orisinal",
+      "Menggunakan logo pesaing selama klien menyetujuinya"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Rudi menggunakan musik orang lain sebagai latar video promosi sekolah. Ia hanya memotong durasi musik tersebut agar lebih pendek. Apa yang perlu diperhatikan?",
+    "a": [
+      "Musik menjadi bebas digunakan setelah dipotong",
+      "Pemotongan musik otomatis menghilangkan hak pencipta",
+      "Musik hanya boleh digunakan jika durasinya lebih dari satu menit",
+      "Izin atau lisensi penggunaan musik tetap perlu diperiksa"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Seorang siswa menggunakan foto berlisensi CC BY untuk tugas desain. Ia tidak mencantumkan nama pencipta karena menganggap foto tersebut gratis. Apa yang seharusnya dilakukan?",
+    "a": [
+      "Tetap mencantumkan atribusi sesuai ketentuan lisensi",
+      "Menghapus foto tersebut dari komputer",
+      "Mengubah nama file foto",
+      "Mengklaim foto sebagai karya sendiri"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Doni menemukan gambar dengan tulisan 'FREE' di sebuah website. Ia ingin memasukkannya ke desain kemasan yang akan dijual. Langkah paling aman adalah...",
+    "a": [
+      "Menggunakan gambar karena ada kata FREE",
+      "Membaca ketentuan lisensi dan batasan penggunaannya",
+      "Menghapus watermark jika ada",
+      "Mengubah gambar menjadi hitam putih"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Maya membuat desain dengan menggunakan foto, font, dan ikon dari tiga sumber berbeda. Apa yang sebaiknya dilakukan sebelum desain dipublikasikan?",
+    "a": [
+      "Memeriksa lisensi setiap aset yang digunakan",
+      "Menghapus semua nama pencipta",
+      "Menganggap semua aset memiliki lisensi yang sama",
+      "Mengganti semua format file"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menghapus watermark pada foto fotografer kemudian menggunakannya untuk brosur bisnis. Mengapa tindakan tersebut bermasalah?",
+    "a": [
+      "Watermark membuat ukuran foto lebih kecil",
+      "Penghapusan watermark otomatis menurunkan kualitas",
+      "Watermark merupakan bagian dari format JPEG",
+      "Penghapusan watermark tidak otomatis memberikan hak penggunaan foto"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Dalam sebuah proyek kelompok, tiga siswa mengerjakan ilustrasi, layout, dan fotografi. Mengapa pencatatan kontribusi setiap anggota penting?",
+    "a": [
+      "Agar file menjadi lebih kecil",
+      "Agar semua anggota memiliki jumlah karya yang sama",
+      "Untuk mendokumentasikan proses dan kontribusi penciptaan",
+      "Agar desain tidak bisa diedit"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Fajar membuat poster dengan mengambil komposisi hampir sama dari poster desainer lain, kemudian hanya mengganti gambar dan teks. Mengapa tindakan tersebut perlu dipertimbangkan secara hati-hati?",
+    "a": [
+      "Semua poster harus menggunakan layout berbeda",
+      "Mengganti gambar selalu membuat desain baru",
+      "Poster tidak boleh memiliki komposisi",
+      "Perubahan sebagian elemen tidak otomatis menghilangkan persoalan hak atas karya asli"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Seorang desainer mendapat foto dari klien dan diberi tahu bahwa foto tersebut milik fotografer lain. Apa yang sebaiknya dilakukan desainer?",
+    "a": [
+      "Langsung menggunakan karena foto diberikan oleh klien",
+      "Memastikan klien memiliki hak atau izin penggunaan yang diperlukan",
+      "Menghapus metadata foto",
+      "Mengganti nama fotografer dengan nama klien"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Sebuah logo perusahaan akan dimasukkan ke poster acara sekolah sebagai sponsor. Apa tindakan yang paling tepat?",
+    "a": [
+      "Mengubah logo sesuka hati",
+      "Menggambar ulang logo tanpa bertanya",
+      "Mengikuti izin dan pedoman penggunaan logo dari pemiliknya",
+      "Menjadikan logo sebagai karya siswa"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Dika membuat ilustrasi sendiri menggunakan software desain. Ia menyimpan file PSD, sketsa, dan beberapa versi desain. Apa manfaat utama dokumentasi tersebut?",
+    "a": [
+      "Membuat karya otomatis menjadi domain publik",
+      "Menghilangkan kebutuhan terhadap lisensi",
+      "Menjadikan file tidak bisa disalin",
+      "Mendukung bukti proses penciptaan dan memudahkan pengeditan"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Seorang siswa menemukan gambar di Pinterest dan ingin menggunakannya untuk desain kaos yang akan dijual. Apa langkah yang paling tepat?",
+    "a": [
+      "Menganggap gambar bebas karena ada di Pinterest",
+      "Mencari sumber asli dan memeriksa lisensi penggunaannya",
+      "Menghapus watermark kemudian mencetaknya",
+      "Menggunakan gambar selama tidak mencantumkan nama pemilik"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Rina membeli foto stok dengan lisensi untuk penggunaan editorial saja. Kemudian ia ingin menggunakan foto tersebut pada iklan produk. Apa yang harus dilakukan?",
+    "a": [
+      "Tetap menggunakan karena foto sudah dibeli",
+      "Mengubah ukuran foto agar menjadi komersial",
+      "Mencari lisensi yang mengizinkan penggunaan untuk iklan",
+      "Menghapus informasi lisensi"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menemukan ikon gratis yang boleh digunakan untuk proyek pribadi. Ia ingin menggunakannya dalam desain aplikasi yang akan dijual. Apa yang perlu diperiksa?",
+    "a": [
+      "Apakah lisensinya mengizinkan penggunaan komersial",
+      "Apakah ikon berwarna menarik",
+      "Apakah ukuran ikon cukup besar",
+      "Apakah ikon dapat diubah menjadi JPG"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Andi mengatakan, 'Saya hanya mengubah warna karya orang lain, jadi sekarang karya itu sepenuhnya milik saya.' Pernyataan tersebut bermasalah karena...",
+    "a": [
+      "Warna tidak boleh digunakan dalam desain",
+      "Perubahan warna otomatis merusak file",
+      "Semua karya harus menggunakan warna asli",
+      "Mengubah sebagian karya tidak otomatis menghapus hak pencipta asli"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Seorang siswa membuat poster menggunakan gambar berlisensi yang mewajibkan atribusi. Ia menaruh kredit pencipta di bagian yang mudah terlihat. Tindakan tersebut menunjukkan...",
+    "a": [
+      "Pengabaian terhadap lisensi",
+      "Pemenuhan salah satu ketentuan lisensi",
+      "Pengalihan hak cipta",
+      "Penghapusan hak pencipta"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Dalam Creative Commons, sebuah aset memiliki tanda NC. Seorang siswa ingin menggunakan aset tersebut untuk iklan berbayar. Apa yang harus diperhatikan?",
+    "a": [
+      "NC berarti No Copyright",
+      "NC berarti bebas untuk semua iklan",
+      "NC berkaitan dengan pembatasan penggunaan komersial",
+      "NC berarti gambar tidak boleh dibuka"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Sebuah aset memiliki lisensi dengan tanda SA. Seorang siswa menggunakannya sebagai bagian dari karya turunan. Hal apa yang perlu diperhatikan?",
+    "a": [
+      "Ketentuan ShareAlike terkait karya turunan",
+      "Aset harus dihapus setelah digunakan",
+      "Aset otomatis menjadi milik siswa",
+      "Aset tidak boleh diubah sama sekali"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Sebuah aset memiliki tanda ND pada lisensinya. Seorang siswa ingin membuat karya turunan dari aset tersebut. Apa yang perlu diperhatikan?",
+    "a": [
+      "ND berarti boleh mengubah tanpa syarat",
+      "ND berarti New Design",
+      "ND hanya mengatur resolusi",
+      "ND berkaitan dengan larangan karya turunan sesuai ketentuan lisensi"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Lina membuat desain menggunakan lima aset dari internet. Ia hanya mencatat alamat Google Images tempat menemukan aset tersebut. Mengapa pencatatan tersebut belum tentu cukup?",
+    "a": [
+      "Google Images bukan selalu sumber asli dan bukan otomatis pemberi izin",
+      "Google Images hanya dapat digunakan oleh fotografer",
+      "Semua alamat internet tidak boleh dicatat",
+      "Aset digital tidak membutuhkan sumber"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membeli software desain secara resmi, tetapi temannya meminta akun tersebut untuk digunakan bersama tanpa izin. Apa masalah utama dari tindakan tersebut?",
+    "a": [
+      "Software akan berubah menjadi gratis",
+      "Penggunaan akun dapat melanggar ketentuan lisensi",
+      "Komputer akan otomatis lambat",
+      "Desain tidak dapat disimpan"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Budi menggunakan software bajakan karena ingin menghemat biaya. Selain persoalan hukum dan etika, risiko lain yang mungkin muncul adalah...",
+    "a": [
+      "Komputer pasti menjadi lebih cepat",
+      "File desain otomatis menjadi legal",
+      "Risiko keamanan seperti malware atau program berbahaya",
+      "Semua font menjadi gratis"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menggunakan karya temannya dalam presentasi kelas. Ia menyebutkan nama temannya sebagai pembuat. Mengapa tindakan tersebut lebih tepat daripada mengaku sebagai pembuat?",
+    "a": [
+      "Memberikan atribusi dan menghargai pencipta karya",
+      "Membuat karya teman menjadi milik sekolah",
+      "Menghilangkan semua hak pencipta",
+      "Membuat karya otomatis bebas digunakan untuk semua tujuan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Raka ingin memasukkan karya klien ke dalam portofolionya. Dalam kontrak tertulis bahwa karya tersebut bersifat rahasia. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Tetap mengunggah karena Raka adalah desainer",
+      "Mengunggah tanpa menyebut nama klien",
+      "Menunggu izin sesuai perjanjian sebelum mempublikasikannya",
+      "Mengubah warna agar kontrak tidak berlaku"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer menyimpan invoice pembelian foto stok dan salinan lisensinya. Apa manfaat dokumentasi tersebut?",
+    "a": [
+      "Membuktikan dasar pembelian atau hak penggunaan aset",
+      "Mengubah foto menjadi karya orisinal",
+      "Menghapus hak fotografer",
+      "Membuat foto bebas dari semua aturan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Dalam membuat kemasan produk, seorang siswa mengambil ilustrasi dari internet karena ilustrasi tersebut sangat cocok dengan konsep produk. Apa pertimbangan utama sebelum ilustrasi digunakan?",
+    "a": [
+      "Apakah ilustrasi memiliki resolusi tinggi saja",
+      "Apakah warna ilustrasi cocok saja",
+      "Apakah ilustrasi memiliki izin atau lisensi yang sesuai untuk kebutuhan produk",
+      "Apakah ilustrasi muncul di halaman pertama Google"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Sebuah toko meminta desainer menggunakan foto produk dari fotografer lain. Toko tersebut mengatakan, 'Foto ini sudah ada di HP kami, jadi pasti boleh digunakan.' Bagaimana sebaiknya desainer merespons?",
+    "a": [
+      "Langsung menggunakan karena ada di HP klien",
+      "Memastikan dasar hak atau izin penggunaan foto tersebut",
+      "Menghapus metadata foto",
+      "Mengubah nama file"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mengira karya yang dibuat untuk tugas sekolah tidak memiliki hak cipta karena tidak dijual. Bagaimana pemahaman yang lebih tepat?",
+    "a": [
+      "Karya tugas sekolah tidak pernah memiliki pencipta",
+      "Semua karya sekolah otomatis milik sekolah",
+      "Hak hanya muncul setelah karya dijual",
+      "Karya orisinal tetap perlu dihargai meskipun dibuat untuk tugas"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Dina membuat ilustrasi sendiri, tetapi menggunakan font dan ikon milik pihak lain. Apa kesimpulan yang paling tepat?",
+    "a": [
+      "Seluruh elemen otomatis menjadi milik Dina",
+      "Dina tetap perlu memperhatikan hak dan lisensi elemen yang digunakan",
+      "Karena ilustrasinya sendiri, semua lisensi tidak berlaku",
+      "Font dan ikon tidak pernah memiliki hak penggunaan"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan foto berlisensi untuk membuat poster. Ia kemudian menjual poster tersebut. Mengapa pemeriksaan lisensi menjadi penting?",
+    "a": [
+      "Penggunaan komersial dapat memiliki syarat yang berbeda",
+      "Penjualan selalu menghapus hak cipta",
+      "Foto menjadi milik pembeli secara otomatis",
+      "Poster tidak boleh menggunakan foto"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menemukan dua gambar yang sama. Gambar pertama berasal dari situs yang menjelaskan lisensinya, sedangkan gambar kedua berasal dari akun anonim tanpa informasi. Mana yang lebih mudah dinilai dari sisi penggunaan?",
+    "a": [
+      "Gambar kedua karena tidak ada aturan",
+      "Keduanya pasti sama",
+      "Gambar pertama karena informasi lisensinya lebih jelas",
+      "Gambar kedua karena tidak memiliki watermark"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Klien memberikan sebuah logo pesaing dan meminta desainer menirunya dengan sedikit perubahan. Mengapa desainer sebaiknya tidak langsung mengerjakannya?",
+    "a": [
+      "Logo tidak boleh dibuat menggunakan komputer",
+      "Perubahan kecil tidak otomatis membuat desain bebas dari persoalan hak pihak lain",
+      "Logo pesaing pasti memiliki resolusi rendah",
+      "Klien tidak boleh memiliki logo"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin membuat desain berdasarkan beberapa poster yang ia jadikan referensi. Tindakan yang paling tepat adalah...",
+    "a": [
+      "Menyalin salah satu poster kemudian mengganti teks",
+      "Mengambil semua elemen dari berbagai poster",
+      "Menghapus nama pembuat referensi",
+      "Mengembangkan gagasan baru tanpa menyalin karya secara tidak semestinya"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Seorang desainer menerima proyek dengan banyak aset dari klien. Agar risiko masalah HAKI lebih kecil, desainer sebaiknya sejak awal menanyakan...",
+    "a": [
+      "Merek HP yang digunakan klien",
+      "Jumlah pengikut media sosial klien",
+      "Siapa pemegang hak dan bagaimana aset akan digunakan",
+      "Warna favorit klien saja"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Dalam sebuah proyek desain, klien meminta semua file sumber diserahkan setelah pembayaran. Mengapa hal ini sebaiknya diperjelas dalam kontrak?",
+    "a": [
+      "Agar ukuran file menjadi lebih kecil",
+      "Agar tidak perlu menggunakan software",
+      "Agar hak penggunaan dan penyerahan hasil pekerjaan menjadi jelas",
+      "Agar desain tidak bisa diedit"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menyimpan sketsa, file kerja, dan tanggal pembuatan poster. Jika suatu saat muncul perselisihan mengenai proses penciptaan, dokumentasi tersebut dapat...",
+    "a": [
+      "Mendukung bukti proses pembuatan karya",
+      "Membuat karya otomatis terkenal",
+      "Menghapus karya pihak lain",
+      "Membuat semua hak menjadi milik sekolah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Sebuah desain dibuat oleh dua siswa. Salah satu siswa kemudian mengunggahnya dengan mengatakan bahwa ia membuat semuanya sendiri. Mengapa tindakan tersebut tidak tepat?",
+    "a": [
+      "Semua desain kelompok harus anonim",
+      "Kontribusi anggota lain seharusnya tidak boleh diakui",
+      "Penggunaan komputer bersama dilarang",
+      "Pengakuan seharusnya mencerminkan kontribusi pencipta dalam proses karya"
+    ],
+    "c": 3
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan lagu populer sebagai musik latar video promosi sekolah karena lagu tersebut sedang tren. Apa langkah yang paling bertanggung jawab?",
+    "a": [
+      "Menggunakan karena semua lagu populer bebas",
+      "Memastikan izin atau lisensi musik sesuai dengan penggunaan video",
+      "Memotong lagu menjadi 10 detik",
+      "Mengubah tempo lagu"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa berkata, 'Kalau saya tidak mendapat keuntungan dari desain, saya bebas menggunakan karya orang lain.' Mengapa pernyataan tersebut terlalu menyederhanakan persoalan?",
+    "a": [
+      "Hak cipta hanya berlaku untuk perusahaan",
+      "Tidak semua penggunaan nonkomersial otomatis bebas dari aturan hak cipta",
+      "Semua tugas sekolah pasti ilegal",
+      "Karya digital tidak mempunyai pencipta"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Dalam membuat konten media sosial sekolah, siswa menggunakan foto siswa lain. Apa yang sebaiknya dipertimbangkan selain hak cipta?",
+    "a": [
+      "Kebutuhan izin atau persetujuan yang relevan terkait penggunaan foto seseorang",
+      "Ukuran monitor siswa",
+      "Jenis keyboard yang digunakan",
+      "Kecepatan internet sekolah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Sebuah perusahaan memiliki resep makanan yang dirahasiakan dan memberikan nilai ekonomi bagi perusahaan. Informasi tersebut paling dekat dengan konsep...",
+    "a": [
+      "Merek",
+      "Desain industri",
+      "Rahasia dagang",
+      "Paten"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Sebuah perusahaan merancang bentuk botol dengan tampilan estetis yang khas untuk produknya. Aspek kekayaan intelektual yang paling relevan untuk tampilan tersebut adalah...",
+    "a": [
+      "Desain industri",
+      "Rahasia dagang",
+      "Hak cipta musik",
+      "Password"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Sebuah perusahaan memiliki nama dan logo yang digunakan untuk membedakan produknya dari pesaing. Konsep HAKI yang paling berkaitan adalah...",
+    "a": [
+      "Paten",
+      "Merek",
+      "Rahasia dagang",
+      "Desain industri"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menciptakan alat baru yang memiliki solusi teknis terhadap suatu masalah. Jenis kekayaan intelektual yang paling berkaitan dengan invensi tersebut adalah...",
+    "a": [
+      "Merek",
+      "Hak cipta fotografi",
+      "Paten",
+      "Rahasia dagang makanan"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang fotografer membuat foto produk sendiri untuk sebuah perusahaan. Karya fotografi tersebut termasuk contoh karya yang dapat memperoleh perlindungan hak cipta. Mengapa?",
+    "a": [
+      "Karena semua foto otomatis menjadi milik perusahaan",
+      "Karena foto merupakan hasil kreativitas pencipta",
+      "Karena kamera memiliki hak cipta",
+      "Karena foto tidak boleh dilihat orang lain"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menjual hasil desain kepada klien. Klien menganggap pembelian desain otomatis berarti desainer kehilangan seluruh haknya. Mengapa hal tersebut perlu diperjelas?",
+    "a": [
+      "Karena semua desain harus gratis",
+      "Karena hak dan penggunaan karya dapat bergantung pada kesepakatan dan ketentuan yang berlaku",
+      "Karena klien tidak boleh menerima desain",
+      "Karena desainer tidak boleh dibayar"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Dalam kontrak desain, klien dan desainer sepakat bahwa desain hanya boleh digunakan untuk satu produk. Jika klien ingin menggunakan desain untuk produk lain, tindakan yang paling tepat adalah...",
+    "a": [
+      "Langsung menggunakan karena sudah membeli desain",
+      "Menghapus nama desainer",
+      "Memeriksa kembali kesepakatan dan memperoleh izin jika diperlukan",
+      "Mengubah ukuran desain"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer menggunakan template dengan lisensi yang melarang penjualan ulang template sebagai file terpisah. Ia kemudian menjual file template tersebut kepada orang lain. Apa masalahnya?",
+    "a": [
+      "Tindakan tersebut dapat bertentangan dengan batasan lisensi template",
+      "Template otomatis menjadi domain publik",
+      "Template tidak dapat disimpan",
+      "Penjualan ulang selalu diperbolehkan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa mengunduh aset dari situs stok dan tidak menyimpan bukti pembelian. Beberapa bulan kemudian ia lupa lisensi yang digunakan. Apa pelajaran yang dapat diambil?",
+    "a": [
+      "Dokumentasi lisensi tidak pernah diperlukan",
+      "Lebih baik menyimpan bukti pembelian dan informasi lisensi sejak awal",
+      "Semua aset stok memiliki lisensi yang sama",
+      "Bukti pembelian menghapus hak pencipta"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan gambar dengan watermark dan membutuhkan gambar tersebut untuk tugas. Apa tindakan yang paling tepat?",
+    "a": [
+      "Menghapus watermark dengan aplikasi",
+      "Mencari sumber resmi dan izin penggunaan atau mencari aset alternatif yang sesuai",
+      "Menggunakan gambar jika tugas tidak dijual",
+      "Memotong bagian watermark"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Sebuah poster menggunakan foto orang lain, font berlisensi khusus, dan logo perusahaan. Mengapa ketiga elemen tersebut harus diperiksa secara terpisah?",
+    "a": [
+      "Karena semua aset pasti memiliki pemilik yang sama",
+      "Karena setiap elemen dapat memiliki pemilik, hak, dan ketentuan penggunaan berbeda",
+      "Karena poster tidak boleh menggunakan tiga jenis aset",
+      "Karena semua aset harus memiliki format file berbeda"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mengubah JPG menjadi PNG lalu mengklaim bahwa gambar tersebut sekarang menjadi karya orisinalnya. Mengapa alasan tersebut tidak tepat?",
+    "a": [
+      "PNG tidak dapat menyimpan gambar",
+      "Perubahan format file tidak mengubah pencipta atau hak atas karya",
+      "JPG selalu bebas digunakan",
+      "PNG otomatis memiliki hak cipta baru"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggambar ulang karakter milik pihak lain dari referensi yang ada di internet. Ia kemudian mengunggahnya sebagai karya sendiri. Apa yang sebaiknya dipahami?",
+    "a": [
+      "Menggambar ulang selalu berarti semua hak berpindah",
+      "Referensi internet selalu bebas",
+      "Penggunaan karakter atau karya pihak lain tetap perlu mempertimbangkan hak yang melekat",
+      "Karya digital tidak memiliki pencipta"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa ingin membuat poster bertema film terkenal untuk tugas sekolah. Ia menggunakan poster asli sebagai dasar lalu mengganti judul dan karakter. Langkah yang lebih aman adalah...",
+    "a": [
+      "Menyalin poster asli karena hanya untuk tugas",
+      "Mengembangkan konsep visual sendiri dan menggunakan elemen yang memang boleh digunakan",
+      "Menghapus nama pembuat poster asli",
+      "Mengubah format poster menjadi PDF"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Sebuah desain menggunakan foto yang lisensinya hanya mengizinkan penggunaan pribadi. Klien meminta desain tersebut digunakan sebagai iklan. Apa yang seharusnya dilakukan?",
+    "a": [
+      "Tetap menggunakan karena desainnya dibuat oleh desainer",
+      "Menggunakan karena foto hanya satu bagian kecil",
+      "Mencari izin atau lisensi yang sesuai untuk penggunaan iklan",
+      "Menghapus metadata foto"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Dalam proyek desain, seorang siswa mencatat nama pencipta, sumber aset, jenis lisensi, dan tanggal memperoleh aset. Kebiasaan tersebut menunjukkan...",
+    "a": [
+      "Manajemen aset dan dokumentasi yang profesional",
+      "Penghapusan hak pencipta",
+      "Usaha menghindari kreativitas",
+      "Kewajiban mengubah semua aset"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menggunakan aset yang diperbolehkan secara gratis tetapi wajib mencantumkan atribusi. Ia tidak mencantumkan kredit karena desainnya terlihat lebih bersih. Apa yang sebaiknya diprioritaskan?",
+    "a": [
+      "Tampilan desain harus selalu lebih penting daripada lisensi",
+      "Kredit boleh dihilangkan jika desain bagus",
+      "Ketentuan lisensi tetap harus dipenuhi meskipun memengaruhi layout",
+      "Nama pencipta harus diganti dengan nama desainer"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menggunakan tiga aset yang semuanya bertuliskan 'Free', tetapi masing-masing memiliki lisensi berbeda. Apa kesimpulan yang tepat?",
+    "a": [
+      "Semua aset pasti boleh digunakan untuk tujuan yang sama",
+      "Kata 'Free' selalu berarti domain publik",
+      "Perbedaan lisensi tetap perlu diperiksa meskipun semuanya disebut gratis",
+      "Semua aset gratis boleh dijual ulang"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Sebuah desain dibuat dengan menggunakan template berlisensi. Desainer menambahkan teks, foto, dan ilustrasi sendiri. Apa yang tetap harus diperhatikan?",
+    "a": [
+      "Lisensi template dan aset lain yang digunakan",
+      "Hanya ukuran file akhir",
+      "Hanya nama desainer",
+      "Tidak ada aturan karena desain sudah diubah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa mengklaim bahwa karya yang ditemukan di internet tidak memiliki hak cipta karena tidak ada simbol ©. Bagaimana seharusnya pernyataan tersebut dipahami?",
+    "a": [
+      "Simbol © adalah syarat mutlak agar karya memiliki hak",
+      "Tidak adanya simbol © tidak otomatis berarti karya bebas hak cipta",
+      "Semua karya tanpa © adalah domain publik",
+      "Internet menghapus semua hak pencipta"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer melihat foto bagus di akun media sosial fotografer dan ingin menggunakannya dalam katalog produk. Apa langkah paling tepat?",
+    "a": [
+      "Mengambil foto karena akun tersebut bersifat publik",
+      "Menghubungi pemilik atau mencari lisensi yang sesuai",
+      "Menghapus watermark",
+      "Menggunakan foto selama mencantumkan nama akun saja"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan foto temannya untuk poster kegiatan sekolah tanpa bertanya. Temannya kemudian meminta agar foto tersebut tidak dipublikasikan. Apa tindakan yang paling bijak?",
+    "a": [
+      "Tetap menggunakan karena fotonya sudah dibuat",
+      "Menghapus nama teman dari poster",
+      "Mempertimbangkan permintaan tersebut dan mengklarifikasi izin penggunaan",
+      "Mengunggah foto ke akun lain"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa membuat logo yang sangat mirip dengan logo merek terkenal untuk latihan. Jika logo tersebut hanya digunakan sebagai bahan belajar pribadi, apa yang tetap perlu dipahami?",
+    "a": [
+      "Logo terkenal otomatis menjadi milik siswa",
+      "Penggunaan untuk latihan tidak berarti siswa boleh mengklaim logo sebagai miliknya",
+      "Semua logo boleh dijual kembali",
+      "Mengubah satu warna membuatnya menjadi merek baru"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer membuat desain untuk klien dan menyimpan file sumber. Klien meminta agar file sumber tidak dipublikasikan. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Mengunggah file sumber karena desainer yang membuatnya",
+      "Mengikuti kesepakatan kerahasiaan dan penggunaan",
+      "Menjual file kepada desainer lain",
+      "Menghapus semua file"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Sebuah perusahaan meminta desainer membuat ulang kemasan produk pesaing dengan bentuk dan tampilan yang hampir sama. Apa pertimbangan yang paling tepat?",
+    "a": [
+      "Semua kemasan boleh ditiru jika produknya berbeda",
+      "Perlu menghindari penyalinan elemen terlindungi dan mengembangkan desain yang orisinal",
+      "Cukup mengganti nama produk",
+      "Cukup mengganti warna"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan font dari website tidak resmi dan menggunakannya dalam proyek. Tidak ada informasi lisensi yang jelas. Apa tindakan paling aman?",
+    "a": [
+      "Menggunakannya karena tidak ada larangan tertulis",
+      "Mencari sumber resmi dan informasi lisensinya atau memilih font dengan lisensi jelas",
+      "Menjual font tersebut",
+      "Mengubah nama font"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan ikon dari library desain yang memiliki batasan penggunaan. Apa yang harus dilakukan sebelum memasukkannya ke produk komersial?",
+    "a": [
+      "Memeriksa apakah penggunaan komersial diizinkan",
+      "Mengubah warna ikon",
+      "Mengubah ukuran ikon",
+      "Menghapus nama library"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menyelesaikan logo dan klien meminta seluruh hak penggunaan. Apa hal yang sebaiknya diperjelas dalam kesepakatan?",
+    "a": [
+      "Warna meja desainer",
+      "Jenis komputer desainer",
+      "Ruang lingkup hak penggunaan, penyerahan file, dan ketentuan lainnya",
+      "Jumlah aplikasi di komputer"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Dalam sebuah proyek kelompok, satu anggota memberikan foto hasil karyanya sendiri dan anggota lain memberikan ilustrasi dari internet. Mengapa keduanya perlu diperlakukan berbeda?",
+    "a": [
+      "Foto tidak memiliki hak sedangkan ilustrasi memiliki hak",
+      "Ilustrasi internet selalu bebas",
+      "Sumber dan dasar hak masing-masing aset berbeda sehingga perlu diperiksa sesuai kondisi",
+      "Semua aset kelompok otomatis menjadi milik ketua"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa ingin membuat konten dengan mengambil gambar dari hasil pencarian pertama Google karena dianggap paling mudah. Mengapa cara tersebut kurang tepat?",
+    "a": [
+      "Hasil pertama selalu beresolusi rendah",
+      "Urutan pencarian tidak menentukan bahwa gambar tersebut bebas digunakan",
+      "Google melarang semua gambar digunakan",
+      "Gambar pertama pasti milik Google"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menemukan dua font. Font A gratis untuk penggunaan pribadi, sedangkan Font B memiliki lisensi komersial yang jelas. Ia akan membuat logo untuk perusahaan. Pilihan pertimbangan yang tepat adalah...",
+    "a": [
+      "Font A karena gratis",
+      "Font A karena lebih terkenal",
+      "Font B jika ketentuan lisensinya sesuai dengan kebutuhan proyek",
+      "Keduanya sama karena sama-sama font"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan gambar yang memiliki lisensi dengan kewajiban atribusi. Ia bertanya apakah cukup mencantumkan 'Google' sebagai sumber. Jawaban yang paling tepat adalah...",
+    "a": [
+      "Ya, Google selalu menjadi pencipta gambar",
+      "Tidak perlu atribusi jika gambar ditemukan melalui Google",
+      "Atribusi sebaiknya mengikuti ketentuan lisensi dan memberikan kredit kepada pencipta atau sumber yang dipersyaratkan",
+      "Cukup menulis 'internet'"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa membuat desain berdasarkan inspirasi dari beberapa poster. Ia mengubah konsep, ilustrasi, tipografi, dan susunan menjadi karya baru. Mengapa proses ini berbeda dari menyalin?",
+    "a": [
+      "Karena semua referensi menjadi miliknya",
+      "Karena ia mengembangkan gagasan sendiri tanpa sekadar mengambil karya orang lain",
+      "Karena poster tidak memiliki hak cipta",
+      "Karena perubahan warna selalu cukup"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer mendapatkan permintaan untuk menggunakan foto milik pihak ketiga dari klien. Klien tidak dapat menjelaskan asal foto tersebut. Apa langkah paling aman?",
+    "a": [
+      "Tetap menggunakan karena klien bertanggung jawab",
+      "Meminta klarifikasi atau bukti hak penggunaan sebelum menggunakannya",
+      "Menghapus metadata foto",
+      "Mengubah foto menjadi ilustrasi"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mengunggah desain ke internet tanpa mencatat sumber aset yang digunakan. Beberapa bulan kemudian ia tidak ingat asal font dan ilustrasinya. Apa pelajaran yang paling relevan?",
+    "a": [
+      "Sumber aset sebaiknya didokumentasikan sejak proses desain",
+      "Sumber hanya perlu dicatat setelah mendapat masalah",
+      "Aset internet tidak perlu dicatat",
+      "Semua font pasti memiliki lisensi yang sama"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan foto yang boleh digunakan dengan atribusi. Ia kemudian menggunakannya untuk desain komersial, tetapi lisensi foto juga mencantumkan larangan komersial. Apa yang harus dilakukan?",
+    "a": [
+      "Cukup mencantumkan nama pencipta",
+      "Tetap menggunakan karena sudah memberikan atribusi",
+      "Mengikuti seluruh ketentuan lisensi dan mencari izin/lisensi komersial bila diperlukan",
+      "Menghapus nama pencipta"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer membuat poster dan menggunakan logo klien. Ia mengubah bentuk logo karena dianggap lebih cocok dengan layout. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Mengubah logo tanpa bertanya",
+      "Memeriksa pedoman penggunaan logo dan meminta persetujuan jika diperlukan",
+      "Menghapus logo dari poster",
+      "Mengklaim logo sebagai bagian dari desainnya"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan software desain bajakan untuk membuat tugas sekolah. Ia berpendapat bahwa karena tugas tersebut tidak dijual, penggunaan software tersebut tidak masalah. Apa yang perlu dipahami?",
+    "a": [
+      "Software bajakan tetap dapat melanggar lisensi dan menimbulkan risiko keamanan",
+      "Semua software untuk tugas sekolah otomatis gratis",
+      "Software bajakan hanya bermasalah jika desain dijual",
+      "Tugas sekolah menghapus aturan lisensi software"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Sebuah karya memiliki lisensi yang mengizinkan penggunaan ulang dengan beberapa syarat. Seorang siswa tidak membaca syarat tersebut dan langsung menggunakannya. Apa kesalahan utama siswa?",
+    "a": [
+      "Tidak mengubah ukuran karya",
+      "Tidak memeriksa ketentuan lisensi sebelum menggunakan karya",
+      "Tidak mengganti warna karya",
+      "Tidak mengubah format file"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan foto orang lain untuk membuat meme dan mengunggahnya ke media sosial. Sebelum mengunggah, hal yang sebaiknya dipertimbangkan adalah...",
+    "a": [
+      "Apakah penggunaan foto tersebut sesuai dengan hak dan ketentuan yang relevan",
+      "Apakah foto memiliki ukuran lebih dari 1 MB",
+      "Apakah foto berasal dari Google",
+      "Apakah foto memiliki warna cerah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggabungkan beberapa aset berlisensi. Ia beranggapan bahwa karena hasil akhirnya berbeda dari aset asli, semua aturan lisensi tidak berlaku. Mengapa pemikiran tersebut keliru?",
+    "a": [
+      "Semua desain harus sama dengan aset asli",
+      "Penggabungan aset tidak otomatis menghapus ketentuan lisensi aset yang digunakan",
+      "Aset digital tidak boleh digabungkan",
+      "Lisensi hanya berlaku untuk foto"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin memasukkan karya orang lain ke dalam portofolio sebagai contoh kemampuan desainnya. Apa masalah utama jika karya tersebut bukan hasil buatannya?",
+    "a": [
+      "Portofolio akan terlalu penuh",
+      "Karya orang lain dapat disalahartikan sebagai hasil kerja siswa",
+      "Portofolio tidak boleh memiliki gambar",
+      "Semua portofolio harus hitam putih"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menampilkan karya klien dalam portofolio setelah mendapatkan persetujuan klien. Apa yang menunjukkan sikap profesional dalam situasi tersebut?",
+    "a": [
+      "Memastikan publikasi sesuai dengan izin dan kesepakatan",
+      "Mengunggah semua file sumber tanpa batas",
+      "Menghapus nama klien",
+      "Menjual kembali desain kepada orang lain"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan gambar dengan lisensi yang tidak jelas tetapi sangat cocok dengan konsep tugas. Ia memiliki waktu terbatas. Apa keputusan yang paling aman?",
+    "a": [
+      "Tetap menggunakan karena waktunya sedikit",
+      "Menghapus watermark dan menggunakannya",
+      "Mencari aset alternatif dengan lisensi yang jelas",
+      "Mengklaim gambar sebagai karya sendiri"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa ingin membuat poster dengan menggunakan gambar karakter terkenal. Ia tidak ingin mencari lisensi karena poster hanya akan dipajang di kelas. Sikap yang paling tepat adalah...",
+    "a": [
+      "Menganggap semua karakter terkenal bebas digunakan",
+      "Tetap memahami bahwa karakter tersebut merupakan karya pihak lain dan mempertimbangkan ketentuan penggunaan yang relevan",
+      "Menghapus nama pemilik karakter",
+      "Mengubah satu warna agar menjadi miliknya"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat ilustrasi sendiri tetapi menggunakan foto orang lain sebagai referensi utama dan menyalin bentuknya hampir persis. Apa hal yang perlu dipertimbangkan?",
+    "a": [
+      "Referensi selalu boleh disalin persis",
+      "Perlu membedakan antara mengambil inspirasi dan menyalin karya secara tidak semestinya",
+      "Foto tidak pernah memiliki hak",
+      "Menggambar ulang selalu menghapus hak karya asli"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Sebuah usaha meminta desainer membuat logo dan langsung menggunakan logo tersebut tanpa kesepakatan tertulis tentang penggunaan. Apa risiko yang dapat muncul?",
+    "a": [
+      "Komputer desainer tidak bisa digunakan",
+      "Warna logo akan berubah",
+      "Potensi perbedaan pemahaman mengenai hak penggunaan, penyerahan, dan pemanfaatan karya",
+      "Logo otomatis menjadi domain publik"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menemukan foto yang boleh digunakan untuk penggunaan nonkomersial. Ia kemudian menggunakannya pada desain kaos yang dijual. Mengapa penggunaan tersebut perlu diperiksa kembali?",
+    "a": [
+      "Karena penjualan merupakan penggunaan komersial yang mungkin tidak tercakup dalam lisensi",
+      "Karena foto tidak boleh dicetak",
+      "Karena kaos tidak boleh memiliki gambar",
+      "Karena foto otomatis menjadi milik pembeli"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer mencatat sumber semua aset yang digunakan dalam proyek. Ketika klien bertanya mengenai legalitas foto yang digunakan, desainer dapat dengan cepat menunjukkan sumber dan lisensinya. Manfaat kebiasaan tersebut adalah...",
+    "a": [
+      "Mempermudah pengecekan dan pembuktian dasar penggunaan aset",
+      "Menghilangkan semua hak pencipta",
+      "Membuat foto menjadi milik klien",
+      "Membuat desain otomatis bebas lisensi"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan template desain untuk membuat undangan yang akan dijual. Sebelum memakainya, ia menemukan lisensi template hanya mengizinkan penggunaan pribadi. Apa keputusan yang tepat?",
+    "a": [
+      "Menggunakannya karena template gratis",
+      "Menggunakan selama tidak mengubah template",
+      "Mencari lisensi yang mengizinkan penggunaan komersial atau menggunakan template lain",
+      "Menghapus nama pembuat template"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menyimpan file AI dan PSD dari proyeknya. Temannya mengatakan bahwa file sumber tidak penting karena yang dinilai hanya JPG. Mengapa file sumber tetap berguna?",
+    "a": [
+      "File sumber dapat mendokumentasikan proses dan memudahkan pengeditan",
+      "File sumber otomatis membuat karya bebas hak cipta",
+      "File sumber menghapus semua metadata",
+      "File sumber membuat karya menjadi milik software"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menemukan aset dengan keterangan lisensi yang sangat panjang. Karena malas membaca, ia langsung menggunakan aset tersebut untuk proyek komersial. Apa risiko dari tindakan tersebut?",
+    "a": [
+      "Aset pasti tidak bisa dibuka",
+      "Ia mungkin tidak menyadari adanya batasan penggunaan yang penting",
+      "File otomatis rusak",
+      "Resolusi aset akan berubah"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mengambil logo perusahaan dari internet dan mengubahnya menjadi bagian dari desain tugas. Ia tidak mengatakan bahwa logo tersebut adalah hasil buatannya. Apa yang tetap perlu diperhatikan?",
+    "a": [
+      "Logo pihak lain tetap memiliki pemilik dan ketentuan penggunaan yang relevan",
+      "Semua logo internet bebas digunakan",
+      "Logo menjadi milik siswa setelah diubah",
+      "Logo tidak termasuk kekayaan intelektual"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer mendapat proyek membuat kemasan produk dan ingin menggunakan ilustrasi dari situs stok. Apa pertanyaan paling penting sebelum membeli atau menggunakan ilustrasi tersebut?",
+    "a": [
+      "Apakah ilustrasinya paling mahal",
+      "Apakah warnanya paling menarik",
+      "Apakah lisensinya sesuai untuk penggunaan pada produk yang akan dijual",
+      "Apakah ilustrasinya muncul di Google"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa mengira mencantumkan 'Sumber: Internet' sudah cukup sebagai atribusi. Mengapa hal tersebut belum tentu memenuhi lisensi?",
+    "a": [
+      "Internet bukan pencipta karya dan lisensi dapat meminta informasi atribusi tertentu",
+      "Semua sumber harus ditulis dalam bahasa Inggris",
+      "Atribusi tidak pernah diperlukan",
+      "Nama internet adalah nama pencipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menjual kembali file ilustrasi yang ia beli dari marketplace aset desain. Ia beranggapan karena sudah membayar, ia boleh menjual file tersebut. Apa yang harus diperiksa?",
+    "a": [
+      "Warna ilustrasi",
+      "Lisensi yang menentukan apakah redistribusi atau penjualan ulang diperbolehkan",
+      "Ukuran layar komputer",
+      "Jumlah follower marketplace"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer membuat logo dengan menggunakan ikon yang ternyata hanya boleh digunakan untuk proyek pribadi. Logo tersebut akan digunakan perusahaan. Apa langkah yang tepat?",
+    "a": [
+      "Tetap menggunakan karena ikon hanya bagian kecil",
+      "Menghapus ikon setelah logo selesai",
+      "Mengganti atau memperoleh lisensi yang sesuai untuk penggunaan komersial",
+      "Mengubah warna ikon"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menemukan foto yang memiliki lisensi jelas untuk penggunaan komersial tetapi mewajibkan atribusi. Ia ingin menggunakan foto tersebut pada brosur. Apa yang harus dilakukan?",
+    "a": [
+      "Tidak menggunakan karena semua lisensi membutuhkan pembayaran",
+      "Mengikuti ketentuan lisensi dan memberikan atribusi yang dipersyaratkan",
+      "Menghapus nama fotografer agar desain bersih",
+      "Mengubah foto menjadi PNG"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan karya orang lain sebagai referensi, kemudian mengembangkan konsep baru dengan ilustrasi, layout, dan tipografi sendiri. Apa sikap yang paling tepat terhadap sumber referensi?",
+    "a": [
+      "Tidak perlu mengakui sumber karena karya akhirnya berbeda",
+      "Menghapus semua bukti referensi",
+      "Tetap menghargai sumber dan memastikan tidak menyalin elemen terlindungi secara tidak semestinya",
+      "Mengklaim semua referensi sebagai miliknya"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menerima tugas membuat desain untuk produk yang akan dijual. Ia menemukan aset yang hanya memiliki lisensi pribadi. Apa yang harus ia lakukan?",
+    "a": [
+      "Menggunakannya karena tugas sekolah",
+      "Memeriksa atau memperoleh lisensi yang sesuai untuk penggunaan komersial",
+      "Menghapus nama pembuat",
+      "Mengubah file menjadi PDF"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menyelesaikan proyek tetapi tidak mencatat aset yang digunakan. Setelah desain selesai, ia menemukan salah satu foto ternyata hanya boleh digunakan secara editorial. Apa masalah yang terjadi?",
+    "a": [
+      "Pemeriksaan lisensi dilakukan terlambat sehingga aset bermasalah sudah masuk ke desain",
+      "Foto editorial selalu boleh digunakan untuk iklan",
+      "Foto otomatis menjadi milik desainer",
+      "Lisensi hanya berlaku sebelum desain selesai"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa berkata, 'Kalau karya saya sudah saya unggah ke Instagram, berarti siapa saja boleh mengambilnya.' Bagaimana pemahaman yang lebih tepat?",
+    "a": [
+      "Unggahan media sosial otomatis menghapus hak pencipta",
+      "Karya yang diunggah tetap dapat memiliki hak dan ketentuan penggunaan",
+      "Semua karya Instagram menjadi domain publik",
+      "Instagram menjadi pemilik semua karya"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer melihat karya orang lain yang sangat bagus dan ingin menjadikannya inspirasi. Apa cara yang paling tepat?",
+    "a": [
+      "Menyalin seluruh layout lalu mengganti warna",
+      "Mengambil gambar asli dan mengganti nama",
+      "Mempelajari prinsip visualnya lalu mengembangkan konsep sendiri",
+      "Menghapus watermark dan menggambar ulang persis"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa membuat poster dengan foto, musik, dan font yang semuanya berasal dari internet. Ia hanya memeriksa lisensi foto. Apa kekurangan dari proses tersebut?",
+    "a": [
+      "Foto tidak perlu diperiksa",
+      "Musik dan font juga dapat memiliki lisensi dan ketentuan penggunaan yang berbeda",
+      "Semua elemen internet memiliki lisensi yang sama",
+      "Poster hanya membutuhkan izin untuk gambar"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mendapat izin menggunakan ilustrasi temannya untuk tugas, tetapi izin tersebut hanya untuk presentasi kelas. Ia kemudian menjual desain tersebut. Apa masalahnya?",
+    "a": [
+      "Izin awal belum tentu mencakup penggunaan komersial",
+      "Semua izin berlaku selamanya",
+      "Presentasi dan penjualan selalu memiliki hak yang sama",
+      "Ilustrasi menjadi milik siswa setelah digunakan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer diminta menghapus nama pencipta dari foto yang digunakan dalam desain, padahal lisensinya mewajibkan atribusi. Apa tindakan yang paling tepat?",
+    "a": [
+      "Menghapusnya agar layout lebih bersih",
+      "Mengikuti permintaan klien karena klien membayar",
+      "Menjelaskan bahwa ketentuan atribusi perlu dipenuhi atau mencari aset dengan lisensi yang sesuai",
+      "Mengganti nama pencipta dengan nama klien"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa membuat desain untuk tugas dan menggunakan foto berlisensi yang mengizinkan penggunaan komersial dengan atribusi. Ia mencantumkan atribusi sesuai aturan. Kesimpulan yang paling tepat adalah...",
+    "a": [
+      "Penggunaan dapat sesuai dengan lisensi jika seluruh syarat lainnya juga dipenuhi",
+      "Atribusi membuat semua penggunaan otomatis legal",
+      "Foto menjadi milik siswa",
+      "Hak pencipta hilang setelah atribusi diberikan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan dua aset yang sama-sama gratis. Aset pertama memiliki lisensi komersial, sedangkan aset kedua hanya untuk penggunaan pribadi. Ia akan membuat desain produk untuk dijual. Aset mana yang lebih sesuai berdasarkan informasi tersebut?",
+    "a": [
+      "Aset kedua karena sama-sama gratis",
+      "Aset pertama karena lisensinya mengizinkan penggunaan komersial",
+      "Keduanya pasti sama",
+      "Tidak ada yang boleh digunakan"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer membuat desain kemasan dan menggunakan foto produk milik fotografer lain. Klien mengatakan bahwa fotografer sudah dibayar untuk memotret. Mengapa desainer tetap perlu memastikan hak penggunaan?",
+    "a": [
+      "Pembayaran jasa foto tidak selalu berarti semua bentuk penggunaan otomatis tidak terbatas",
+      "Foto tidak dapat digunakan dalam kemasan",
+      "Klien tidak boleh menggunakan foto produknya sendiri",
+      "Pembayaran membuat foto menjadi domain publik"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin memasukkan karya teman ke dalam video presentasi. Temannya mengizinkan penggunaan dengan syarat namanya dicantumkan. Apa tindakan yang tepat?",
+    "a": [
+      "Menggunakan tanpa menyebut nama",
+      "Mencantumkan nama pembuat sesuai kesepakatan",
+      "Mengganti nama pembuat dengan nama kelompok",
+      "Menjual karya tersebut"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menemukan karya miliknya digunakan dalam iklan pihak lain tanpa izin. Apa langkah awal yang paling masuk akal?",
+    "a": [
+      "Membalas dengan menggunakan karya pihak tersebut tanpa izin",
+      "Menyebarkan data pribadi pihak tersebut",
+      "Mendokumentasikan penggunaan dan mempertimbangkan langkah sesuai ketentuan yang berlaku",
+      "Menghapus seluruh karya sendiri"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menggunakan hasil pencarian gambar sebagai bahan desain. Guru bertanya dari mana gambar tersebut berasal. Siswa hanya menjawab 'dari Google'. Mengapa jawaban tersebut belum cukup?",
+    "a": [
+      "Google adalah pencipta semua gambar",
+      "Google hanya mesin pencari sehingga sumber asli dan lisensi gambar perlu diketahui",
+      "Semua gambar Google pasti ilegal",
+      "Google tidak boleh digunakan untuk mencari referensi"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin membuat portofolio dengan memasukkan karya klien yang sudah dipublikasikan secara resmi. Apakah publikasi resmi otomatis berarti siswa boleh menggunakan karya tersebut untuk semua tujuan?",
+    "a": [
+      "Ya, semua karya yang sudah dipublikasikan bebas digunakan",
+      "Tidak, tetap perlu memperhatikan kesepakatan dengan klien dan hak pihak terkait",
+      "Ya, karena karya sudah ada di internet",
+      "Ya, selama tidak mencantumkan nama klien"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggunakan aset berlisensi, lalu menghapus informasi lisensi dari file sebelum menyerahkannya. Mengapa tindakan tersebut kurang tepat?",
+    "a": [
+      "Informasi lisensi dapat membantu memastikan dan mendokumentasikan ketentuan penggunaan aset",
+      "Informasi lisensi selalu membuat file rusak",
+      "Lisensi hanya diperlukan untuk fotografer",
+      "Menghapus informasi lisensi membuat karya menjadi bebas"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer ingin menggunakan gambar yang sumber aslinya tidak diketahui untuk proyek klien. Apa keputusan profesional yang paling aman?",
+    "a": [
+      "Menggunakan karena tidak ada yang mengaku sebagai pemilik",
+      "Menghapus watermark jika ada",
+      "Mencari sumber yang jelas atau menggunakan aset dengan lisensi yang dapat diverifikasi",
+      "Mengklaim gambar sebagai karya sendiri"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menyatakan bahwa semakin banyak elemen karya orang lain yang dimasukkan ke dalam desain, semakin profesional desain tersebut. Dari sudut pandang HAKI, apa masalah pemikiran tersebut?",
+    "a": [
+      "Profesionalitas tidak ditentukan oleh banyaknya karya orang lain yang digunakan, tetapi penggunaan aset harus memperhatikan hak dan lisensi",
+      "Semua desain profesional harus dibuat tanpa komputer",
+      "Karya orang lain selalu meningkatkan kualitas desain",
+      "Semakin banyak aset digunakan berarti otomatis bebas hak cipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggabungkan foto berlisensi, font komersial, dan ilustrasi buatannya sendiri. Sebelum menjual desain tersebut, apa yang paling tepat dilakukan?",
+    "a": [
+      "Memastikan seluruh aset memiliki izin yang sesuai dengan penggunaan komersial",
+      "Hanya memeriksa ilustrasi buatannya sendiri",
+      "Menghapus nama semua pencipta",
+      "Mengubah semua aset menjadi JPG"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menemukan font yang boleh digunakan secara gratis untuk proyek pribadi dan komersial, tetapi lisensinya mewajibkan atribusi. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Mengabaikan atribusi karena font gratis",
+      "Memenuhi ketentuan atribusi sesuai lisensi",
+      "Menghapus nama pembuat font",
+      "Menganggap font menjadi milik desainer"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menerima tugas membuat desain poster untuk acara sekolah. Ia mengambil desain poster tahun lalu dan mengganti seluruh teks, tetapi layout dan elemen visual utama tetap sama. Apa hal yang perlu dipertimbangkan?",
+    "a": [
+      "Mengganti teks selalu membuat karya sepenuhnya baru",
+      "Perlu memastikan penggunaan desain sebelumnya tidak melanggar hak atau kesepakatan atas karya tersebut",
+      "Poster sekolah selalu bebas hak cipta",
+      "Layout tidak pernah termasuk bagian karya"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin membuat desain kemasan berdasarkan kemasan merek terkenal. Ia menyalin bentuk, warna, dan susunan visualnya, lalu mengganti nama produk. Apa pendekatan yang lebih tepat?",
+    "a": [
+      "Menyalin karena nama produknya berbeda",
+      "Mengembangkan identitas visual sendiri agar tidak sekadar meniru desain pihak lain",
+      "Menghapus nama merek asli dari kemasan",
+      "Mengubah satu warna saja"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membeli gambar dari situs stok untuk proyek sekolah. Ia kemudian ingin membagikan file gambar asli tersebut kepada teman-temannya agar mereka dapat menggunakannya. Apa yang perlu diperiksa?",
+    "a": [
+      "Apakah lisensi mengizinkan redistribusi file asli",
+      "Apakah gambar beresolusi tinggi",
+      "Apakah teman menggunakan komputer yang sama",
+      "Apakah gambar memiliki warna RGB"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menggunakan aset yang lisensinya memperbolehkan penggunaan dengan atribusi. Dalam desain yang ruangnya terbatas, ia ingin menghilangkan kredit. Apa pilihan yang lebih tepat?",
+    "a": [
+      "Menghapus kredit tanpa memeriksa aturan",
+      "Mencari cara menempatkan atribusi sesuai ketentuan atau memilih aset dengan lisensi yang lebih sesuai",
+      "Mengganti nama pencipta",
+      "Mengklaim atribusi tidak penting"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer membuat desain menggunakan aset milik pihak lain. Klien meminta agar semua kredit dihapus. Apa yang harus dilakukan desainer?",
+    "a": [
+      "Menghapus semua kredit karena klien membayar",
+      "Memeriksa kewajiban lisensi dan menjelaskan kepada klien jika atribusi tetap diwajibkan",
+      "Mengganti kredit dengan nama klien",
+      "Menghapus aset tersebut tanpa memberi tahu klien"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat karya orisinal dan menyimpan file sumber, sketsa, serta dokumentasi tanggal pembuatan. Kebiasaan tersebut terutama menunjukkan...",
+    "a": [
+      "Upaya mendokumentasikan proses penciptaan karya",
+      "Usaha menghapus hak orang lain",
+      "Cara membuat karya otomatis terkenal",
+      "Cara menghilangkan kebutuhan terhadap lisensi"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer mendapat proyek dari klien yang meminta desain selesai sangat cepat. Karena terburu-buru, desainer menggunakan aset dari internet tanpa memeriksa lisensinya. Apa kelemahan utama keputusan tersebut?",
+    "a": [
+      "Desain pasti memiliki warna yang buruk",
+      "Kecepatan kerja tidak menghilangkan kebutuhan memeriksa hak dan lisensi aset",
+      "Semua aset internet menjadi legal jika digunakan cepat",
+      "Klien otomatis menanggung seluruh risiko"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan foto berlisensi komersial, tetapi lisensinya membatasi jumlah reproduksi. Ia ingin mencetak ribuan kemasan. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Mengabaikan batasan karena lisensinya komersial",
+      "Memeriksa batas penggunaan dan memperoleh lisensi yang sesuai jika diperlukan",
+      "Mengubah ukuran foto",
+      "Menghapus metadata"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat karya dengan menggunakan beberapa aset pihak lain. Guru meminta siswa menunjukkan sumber semua aset. Mengapa kebiasaan mencatat sumber sejak awal penting bagi siswa DKV?",
+    "a": [
+      "Agar semua desain memiliki ukuran file yang sama",
+      "Agar mudah memeriksa lisensi, memberikan atribusi, dan mempertanggungjawabkan penggunaan aset",
+      "Agar karya menjadi otomatis bebas hak cipta",
+      "Agar tidak perlu membuat karya sendiri"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa melihat karya temannya dan ingin menggunakan konsepnya. Ia meminta izin terlebih dahulu dan menjelaskan bagaimana karya tersebut akan digunakan. Sikap tersebut menunjukkan...",
+    "a": [
+      "Penghormatan terhadap pencipta dan penggunaan karya secara bertanggung jawab",
+      "Ketidakmampuan membuat desain",
+      "Pelanggaran otomatis",
+      "Penghapusan hak teman"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan ilustrasi dari internet untuk desain yang akan dicetak dan dijual. Ia menemukan dua sumber: sumber pertama tidak jelas lisensinya, sumber kedua menjelaskan lisensi komersial secara lengkap. Apa pertimbangan yang paling rasional?",
+    "a": [
+      "Memilih sumber kedua karena dasar izin penggunaannya lebih jelas",
+      "Memilih sumber pertama karena tidak ada aturan",
+      "Memilih sumber pertama karena lebih mudah ditemukan",
+      "Keduanya sama karena sama-sama dari internet"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menggunakan logo perusahaan klien dalam poster dan mengubah proporsi logo agar sesuai layout. Apa yang sebaiknya dilakukan sebelum perubahan tersebut digunakan?",
+    "a": [
+      "Mengubahnya tanpa bertanya",
+      "Memeriksa brand guideline dan meminta persetujuan bila diperlukan",
+      "Menghapus logo",
+      "Mengklaim logo sebagai elemen desain sendiri"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan gambar yang dapat digunakan ulang tetapi memiliki beberapa syarat. Ia hanya membaca judul lisensinya tanpa membaca rinciannya. Apa risiko dari cara tersebut?",
+    "a": [
+      "Judul lisensi selalu tidak berguna",
+      "Ia dapat melewatkan batasan seperti atribusi, komersial, atau karya turunan",
+      "Gambar akan otomatis terhapus",
+      "Lisensi hanya berlaku untuk pencipta"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain untuk dijual dan menggunakan aset yang lisensinya hanya mengizinkan penggunaan pribadi. Ia berpendapat bahwa karena desain akhirnya berbeda, lisensi tidak lagi berlaku. Apa yang perlu dipahami?",
+    "a": [
+      "Karya baru selalu menghapus semua lisensi aset",
+      "Ketentuan lisensi aset tetap perlu diperhatikan meskipun aset telah menjadi bagian dari desain baru",
+      "Perubahan warna menghapus lisensi",
+      "Penggunaan pribadi dan komersial selalu sama"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mendapat proyek desain dari sebuah usaha. Sebelum mulai bekerja, ia menanyakan siapa pemilik aset foto, font, dan logo yang diberikan klien. Mengapa langkah tersebut profesional?",
+    "a": [
+      "Agar desain dapat selesai lebih cepat",
+      "Agar desainer memahami dasar hak dan izin penggunaan aset yang akan dipakai",
+      "Agar klien membayar lebih mahal",
+      "Agar semua aset menjadi milik desainer"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan karya yang sudah lama beredar di internet dan menganggap karya tersebut pasti menjadi domain publik. Apa kesalahan dalam cara berpikir tersebut?",
+    "a": [
+      "Lama beredar di internet tidak otomatis menentukan bahwa karya bebas hak cipta",
+      "Semua karya lama otomatis menjadi milik Google",
+      "Internet hanya menyimpan karya baru",
+      "Karya domain publik tidak boleh digunakan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer ingin menggunakan gambar dari situs stok untuk billboard perusahaan. Ia menemukan lisensi yang mengizinkan penggunaan tetapi memiliki batasan tertentu. Apa yang harus dilakukan sebelum membeli?",
+    "a": [
+      "Membeli tanpa membaca karena semua lisensi stok sama",
+      "Memeriksa apakah jenis media, tujuan komersial, dan skala penggunaan tercakup dalam lisensi",
+      "Mengubah gambar menjadi hitam putih",
+      "Menghapus nama fotografer"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat poster dengan menggunakan karya teman dan menyebutkan nama temannya. Temannya ternyata hanya memberikan izin untuk presentasi, bukan untuk dipublikasikan di media sosial. Apa yang seharusnya dilakukan?",
+    "a": [
+      "Tetap mengunggah karena nama teman sudah dicantumkan",
+      "Meminta izin tambahan atau tidak mempublikasikannya di luar ruang lingkup izin",
+      "Menghapus nama teman",
+      "Mengubah ukuran poster"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin menjadikan karya orang lain sebagai bagian dari desain komersial. Ia menghubungi pencipta dan mendapatkan izin tertulis untuk penggunaan tersebut. Mengapa dokumentasi izin tersebut penting?",
+    "a": [
+      "Untuk mendokumentasikan dasar penggunaan karya",
+      "Untuk menghapus hak pencipta",
+      "Untuk membuat karya otomatis menjadi milik siswa",
+      "Untuk menghilangkan kebutuhan membaca lisensi"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggunakan foto dari internet. Setelah mencari lebih lanjut, ia menemukan fotografer asli dan informasi lisensi yang melarang penggunaan komersial. Apa tindakan yang paling tepat jika desain akan dijual?",
+    "a": [
+      "Tetap menggunakan karena foto sudah terlanjur dimasukkan",
+      "Menghapus nama fotografer",
+      "Mencari izin/lisensi yang sesuai atau mengganti foto dengan aset yang boleh digunakan",
+      "Mengubah foto menjadi ilustrasi tanpa izin"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer ingin memastikan proyeknya aman dari masalah penggunaan aset. Ia membuat daftar berisi nama aset, sumber, pencipta, jenis lisensi, dan bukti izin. Fungsi utama daftar tersebut adalah...",
+    "a": [
+      "Memperbesar ukuran proyek",
+      "Mempermudah pengelolaan hak dan lisensi aset yang digunakan",
+      "Menghapus semua hak pencipta",
+      "Membuat desain otomatis menjadi milik klien"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mengatakan bahwa HAKI hanya penting bagi perusahaan besar, bukan bagi siswa DKV. Apa alasan yang paling tepat untuk membantah anggapan tersebut?",
+    "a": [
+      "Siswa DKV juga menghasilkan dan menggunakan karya seperti ilustrasi, foto, desain, font, dan musik",
+      "HAKI hanya berlaku bagi siswa yang sudah bekerja",
+      "Semua karya siswa otomatis bebas",
+      "DKV tidak menggunakan aset digital"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain kemasan dengan menggunakan ilustrasi dari situs yang lisensinya tidak jelas. Guru meminta siswa mengganti ilustrasi tersebut dengan aset yang lisensinya jelas. Apa alasan paling kuat dari keputusan tersebut?",
+    "a": [
+      "Aset dengan lisensi jelas lebih mudah dipertanggungjawabkan penggunaannya",
+      "Aset tidak jelas pasti memiliki resolusi buruk",
+      "Semua aset internet tidak boleh digunakan",
+      "Ilustrasi berlisensi selalu lebih bagus"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa mendapat tugas membuat logo dan mengambil simbol dari internet. Setelah diperiksa, simbol tersebut merupakan bagian dari merek pihak lain. Apa tindakan yang paling tepat?",
+    "a": [
+      "Menggunakannya karena simbol hanya kecil",
+      "Menghapus nama pemilik",
+      "Mempertimbangkan hak pihak lain dan membuat atau menggunakan elemen yang memiliki dasar penggunaan yang sesuai",
+      "Mengubah warna simbol saja"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggunakan foto, tetapi tidak menyimpan sumber foto karena mengira nama file sudah cukup. Ketika diminta menjelaskan sumber foto, ia tidak dapat menemukannya. Apa pelajaran yang tepat?",
+    "a": [
+      "Nama file tidak selalu cukup untuk mendokumentasikan sumber dan lisensi",
+      "Foto tidak membutuhkan sumber",
+      "Semua foto memiliki pencipta yang sama",
+      "Sumber hanya diperlukan jika foto dijual"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain menggunakan aset yang memiliki lisensi berbeda-beda. Salah satu lisensi mewajibkan atribusi dan lainnya membatasi penggunaan komersial. Apa yang harus dilakukan?",
+    "a": [
+      "Mengikuti hanya lisensi yang paling mudah",
+      "Mengikuti ketentuan masing-masing aset atau mengganti aset yang tidak sesuai kebutuhan",
+      "Menghapus semua atribusi",
+      "Menganggap lisensi yang berbeda saling menghapus"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menggunakan foto orang lain dalam poster dan mendapat teguran dari fotografer. Desainer mengatakan bahwa ia menemukan foto tersebut melalui Google. Mengapa alasan tersebut tidak otomatis membenarkan penggunaan?",
+    "a": [
+      "Google tidak otomatis memberikan izin atas semua gambar yang ditemukan",
+      "Google melarang semua kegiatan desain",
+      "Semua foto Google adalah milik Google",
+      "Foto dari Google pasti beresolusi rendah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin membuat karya yang terinspirasi dari desain terkenal. Ia menganalisis prinsip warna, keseimbangan, dan tipografinya, kemudian membuat komposisi baru. Mengapa pendekatan tersebut lebih tepat daripada menyalin?",
+    "a": [
+      "Karena ia menerapkan pembelajaran visual ke dalam karya baru tanpa sekadar menyalin karya asli",
+      "Karena karya terkenal tidak memiliki hak",
+      "Karena perubahan warna selalu menghapus hak",
+      "Karena semua referensi boleh disalin"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer mendapatkan pekerjaan membuat desain promosi dengan waktu sangat singkat. Ia menemukan aset yang sesuai tetapi lisensinya tidak diketahui. Apa keputusan profesional yang paling tepat?",
+    "a": [
+      "Tetap menggunakan karena klien sedang terburu-buru",
+      "Menghapus watermark dan menggunakannya",
+      "Menggunakan aset alternatif yang lisensinya jelas atau memperoleh izin terlebih dahulu",
+      "Mengklaim aset sebagai karya sendiri"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menggunakan karya orang lain dalam tugas dan mencantumkan nama pencipta. Namun ia juga mengedit karya tersebut meskipun lisensinya melarang karya turunan. Apa yang masih menjadi masalah?",
+    "a": [
+      "Atribusi tidak selalu menggantikan syarat lain dalam lisensi",
+      "Nama pencipta membuat semua perubahan otomatis boleh",
+      "Editing selalu diperbolehkan jika mencantumkan sumber",
+      "Lisensi hanya mengatur nama pencipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membeli font dan ingin memberikannya kepada teman untuk dipasang di komputer teman tersebut. Apa yang perlu diperiksa?",
+    "a": [
+      "Apakah lisensi mengizinkan berbagi atau instalasi pada perangkat pengguna lain",
+      "Apakah font memiliki banyak warna",
+      "Apakah font dapat digunakan dalam Photoshop",
+      "Apakah file font berukuran kecil"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menggunakan logo perusahaan dalam tugas analisis desain. Ia tidak mengklaim logo tersebut sebagai miliknya dan menyebutkan perusahaan pemiliknya. Mengapa tindakan tersebut berbeda dengan mencuri logo untuk dijual?",
+    "a": [
+      "Tujuan dan cara penggunaan berbeda, tetapi hak pihak pemilik tetap perlu dihormati",
+      "Logo menjadi milik siswa jika hanya dianalisis",
+      "Logo perusahaan bebas dijual oleh siapa saja",
+      "Semua logo tidak memiliki hak"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer membuat karya menggunakan template yang dibeli. Dalam portofolio, ia ingin menyatakan bahwa seluruh template dibuat sendiri dari awal. Mengapa pernyataan tersebut tidak tepat?",
+    "a": [
+      "Template tidak boleh digunakan",
+      "Penggunaan template tidak berarti seluruh bagian template diciptakan oleh desainer",
+      "Template otomatis menjadi milik klien",
+      "Semua portofolio harus anonim"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggunakan aset yang lisensinya mengizinkan penggunaan komersial tetapi mewajibkan atribusi. Ia menjual desain tersebut tanpa memberikan kredit. Apa yang perlu diperbaiki?",
+    "a": [
+      "Mengubah resolusi desain",
+      "Mengurangi jumlah warna",
+      "Memenuhi kewajiban atribusi sesuai lisensi",
+      "Menghapus aset dari desain"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menemukan karya milik fotografer lain dan ingin menggunakannya. Ia kemudian meminta izin dan fotografer memberikan izin untuk penggunaan pada satu poster sekolah saja. Jika siswa ingin memakai foto tersebut untuk produk komersial, apa yang harus dilakukan?",
+    "a": [
+      "Tetap menggunakan karena sudah pernah mendapat izin",
+      "Meminta izin tambahan untuk penggunaan komersial",
+      "Menghapus nama fotografer",
+      "Mengubah ukuran foto"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menerima file logo dari klien tetapi tidak mengetahui apakah klien memiliki hak atas logo tersebut. Apa langkah yang tepat?",
+    "a": [
+      "Menganggap klien pasti memiliki semua hak",
+      "Memastikan atau meminta klarifikasi mengenai hak penggunaan logo",
+      "Menghapus logo dari semua desain",
+      "Mengubah logo agar menjadi karya desainer"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain menggunakan lima gambar. Empat memiliki lisensi jelas, sedangkan satu tidak diketahui sumbernya. Apa tindakan paling aman sebelum desain dipublikasikan?",
+    "a": [
+      "Membiarkan satu gambar karena hanya satu",
+      "Menghapus semua gambar",
+      "Mencari sumber dan lisensi gambar tersebut atau menggantinya dengan aset yang jelas",
+      "Menghapus nama semua pencipta"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer ingin menggunakan musik dari library online untuk video promosi. Ia menemukan musik bertanda 'free'. Apa yang perlu diperiksa?",
+    "a": [
+      "Apakah 'free' tersebut mencakup penggunaan komersial dan apakah ada syarat atribusi atau batasan lain",
+      "Apakah musik memiliki bass yang kuat",
+      "Apakah durasinya lebih dari tiga menit",
+      "Apakah file musik berformat MP3"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menggunakan ilustrasi temannya setelah mendapat izin untuk tugas sekolah. Ia kemudian memasukkan ilustrasi tersebut ke produk yang dijual tanpa meminta izin tambahan. Apa masalahnya?",
+    "a": [
+      "Izin untuk tugas sekolah belum tentu mencakup penggunaan komersial",
+      "Semua izin otomatis berlaku selamanya",
+      "Ilustrasi teman otomatis menjadi milik siswa",
+      "Penjualan tidak pernah termasuk penggunaan komersial"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa mengatakan bahwa karya digital tidak perlu dihargai karena dapat disalin dengan mudah. Apa tanggapan yang paling tepat?",
+    "a": [
+      "Kemudahan menyalin tidak menghilangkan hak dan kontribusi pencipta",
+      "Karya digital memang tidak memiliki pencipta",
+      "Semua karya digital adalah domain publik",
+      "Hak hanya berlaku untuk karya cetak"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan gambar di internet dan tidak menemukan nama penciptanya. Ia ingin menggunakannya dalam proyek komersial. Apa keputusan yang paling aman?",
+    "a": [
+      "Menganggap gambar bebas karena pencipta tidak diketahui",
+      "Menggunakan karena tidak ada watermark",
+      "Mencari sumber yang dapat diverifikasi atau menggunakan aset dengan lisensi yang jelas",
+      "Mengklaim gambar sebagai karya sendiri"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer membuat poster dengan menggunakan karya orang lain sesuai lisensi. Klien meminta semua sumber dihapus agar poster terlihat lebih sederhana. Apa tindakan yang sebaiknya dilakukan desainer?",
+    "a": [
+      "Menghapus sumber karena klien membayar",
+      "Menjelaskan bahwa syarat lisensi harus dipenuhi dan mencari solusi penempatan atribusi yang sesuai",
+      "Mengganti nama pencipta dengan nama klien",
+      "Menghapus aset tanpa berdiskusi"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menyimpan screenshot halaman lisensi ketika mengunduh aset. Beberapa bulan kemudian website berubah. Apa manfaat screenshot tersebut?",
+    "a": [
+      "Dapat membantu mendokumentasikan informasi lisensi yang dilihat saat aset diperoleh",
+      "Membuat aset menjadi milik siswa",
+      "Menghapus hak pencipta",
+      "Membuat semua penggunaan otomatis legal"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menggunakan karya orang lain sebagai referensi dan menyimpan tautan sumbernya. Setelah membuat desain sendiri, ia mencantumkan referensi tersebut dalam proses tugas. Kebiasaan ini menunjukkan...",
+    "a": [
+      "Kebiasaan dokumentasi dan penghargaan terhadap sumber referensi",
+      "Pengakuan bahwa seluruh karya adalah milik sumber",
+      "Ketidakmampuan membuat desain",
+      "Pelanggaran otomatis terhadap hak cipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer membuat logo untuk klien dan menggunakan font yang lisensinya tidak mengizinkan penggunaan komersial. Logo tersebut akan dipakai perusahaan. Apa solusi yang paling tepat?",
+    "a": [
+      "Menggunakan font tersebut karena hanya digunakan dalam logo",
+      "Menghapus nama pembuat font",
+      "Memilih font dengan lisensi yang sesuai atau memperoleh izin penggunaan yang diperlukan",
+      "Mengubah logo menjadi PNG"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa mendapat tugas membuat desain promosi. Ia menggunakan foto yang diberi lisensi editorial-only karena foto tersebut paling bagus. Mengapa keputusan tersebut perlu diubah?",
+    "a": [
+      "Penggunaan promosi tidak otomatis termasuk penggunaan editorial",
+      "Foto editorial selalu beresolusi rendah",
+      "Foto editorial tidak boleh dilihat",
+      "Semua foto editorial otomatis menjadi milik sekolah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan aset dengan lisensi yang mengizinkan penggunaan ulang tetapi mewajibkan karya turunan dibagikan dengan lisensi yang sama. Ketentuan tersebut berkaitan dengan...",
+    "a": [
+      "NC",
+      "SA",
+      "ND",
+      "RGB"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan aset dengan lisensi yang tidak mengizinkan karya turunan. Ia ingin mengubah warna dan menggabungkannya dengan desain lain. Apa yang perlu diperhatikan?",
+    "a": [
+      "Perubahan warna otomatis diperbolehkan",
+      "Ketentuan NoDerivatives perlu diperiksa karena perubahan dapat termasuk karya turunan",
+      "Semua aset boleh diubah jika gratis",
+      "Atribusi saja sudah cukup"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan karya orang lain sesuai lisensi, tetapi mengklaim kepada klien bahwa seluruh elemen desain dibuat sendiri. Mengapa pernyataan tersebut bermasalah?",
+    "a": [
+      "Menggunakan aset berlisensi tidak berarti pencipta aset tersebut berubah menjadi siswa",
+      "Semua aset harus dibuat sendiri",
+      "Lisensi menghapus hak pencipta",
+      "Klien tidak boleh mengetahui sumber aset"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat karya orisinal dengan software desain, kemudian menyimpan file sumber dan bukti tanggal pembuatan. Jika muncul pertanyaan mengenai proses penciptaan, dokumentasi tersebut dapat...",
+    "a": [
+      "Membantu menunjukkan proses dan riwayat pembuatan karya",
+      "Membuat semua karya lain menjadi ilegal",
+      "Menghilangkan hak pencipta lain",
+      "Membuat karya otomatis tidak dapat disalin"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan aset dari situs yang memiliki lisensi jelas, tetapi lisensi tersebut melarang penggunaan untuk logo atau merek dagang. Ia ingin menggunakan aset tersebut sebagai bagian dari logo perusahaan. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Tetap menggunakan karena lisensinya gratis",
+      "Menggunakan selama aset diubah warnanya",
+      "Mencari aset atau lisensi yang mengizinkan penggunaan tersebut",
+      "Menghapus informasi lisensi"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer diminta membuat desain kemasan dan menggunakan foto yang dibeli klien dari fotografer. Sebelum digunakan, desainer memeriksa invoice dan lisensi foto. Mengapa langkah tersebut baik?",
+    "a": [
+      "Untuk memastikan dasar penggunaan foto sesuai dengan kebutuhan proyek",
+      "Untuk mengubah fotografer menjadi pemilik klien",
+      "Untuk menghapus hak cipta",
+      "Untuk membuat foto otomatis bebas digunakan di semua media"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan gambar yang boleh digunakan dengan atribusi, tetapi tidak boleh digunakan secara komersial. Ia ingin menggunakannya untuk poster promosi produk. Apa pilihan yang tepat?",
+    "a": [
+      "Tetap menggunakan selama mencantumkan nama pencipta",
+      "Menggunakan karena gambar gratis",
+      "Mencari izin atau aset dengan lisensi yang mengizinkan penggunaan komersial",
+      "Menghapus atribusi"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa menggunakan karya temannya dalam presentasi dan berkata, 'Saya tidak mencuri karena saya hanya menyalin untuk belajar.' Apa hal yang tetap perlu diperhatikan?",
+    "a": [
+      "Penggunaan karya orang lain tetap perlu menghargai pencipta dan mengikuti izin atau ketentuan yang relevan",
+      "Semua penggunaan untuk belajar otomatis bebas tanpa batas",
+      "Karya teman tidak memiliki hak",
+      "Belajar menghapus hak cipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menemukan foto yang sangat cocok untuk iklan tetapi tidak dapat memastikan siapa penciptanya. Ia memiliki alternatif foto dengan sumber dan lisensi yang jelas. Apa keputusan yang lebih aman dari sisi pengelolaan aset?",
+    "a": [
+      "Menggunakan foto yang tidak jelas karena lebih bagus",
+      "Menggunakan foto dengan sumber dan lisensi yang jelas",
+      "Menghapus watermark dari foto pertama",
+      "Mengklaim foto pertama sebagai karya sendiri"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain untuk tugas kelompok. Salah satu anggota mengambil gambar dari internet tanpa mencatat sumber. Apa yang sebaiknya dilakukan kelompok sebelum desain dipublikasikan?",
+    "a": [
+      "Membiarkannya karena hanya satu gambar",
+      "Mencari sumber dan memeriksa lisensinya atau mengganti gambar tersebut",
+      "Menghapus nama semua anggota",
+      "Menganggap gambar menjadi milik kelompok"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain poster dengan menggunakan aset berlisensi dan kemudian menjual desain tersebut. Sebelum penjualan, ia memastikan lisensi seluruh aset mengizinkan penggunaan komersial. Sikap tersebut menunjukkan...",
+    "a": [
+      "Kebiasaan profesional dalam mengelola hak penggunaan aset",
+      "Pemborosan waktu",
+      "Ketidakmampuan membuat desain sendiri",
+      "Penghapusan hak pencipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan logo perusahaan di internet dan ingin menggunakannya sebagai contoh analisis identitas visual. Ia mencantumkan nama perusahaan dan tidak mengklaim logo tersebut sebagai miliknya. Apa yang paling penting dipahami?",
+    "a": [
+      "Logo tetap merupakan elemen milik pihak lain dan penggunaannya harus dipahami sesuai konteks",
+      "Mencantumkan nama perusahaan otomatis memindahkan hak",
+      "Logo menjadi milik siswa karena digunakan untuk tugas",
+      "Semua logo internet bebas digunakan untuk semua tujuan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa diminta membuat desain promosi menggunakan foto milik klien. Klien tidak mengetahui apakah fotografer memberikan izin untuk penggunaan komersial. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Menggunakan karena klien sudah memberikan foto",
+      "Meminta klarifikasi atau memastikan hak penggunaan sebelum memasukkannya ke materi promosi",
+      "Menghapus metadata foto",
+      "Mengubah foto menjadi hitam putih"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat karya sendiri tetapi menggunakan software bajakan. Dari sudut pandang profesional, apa yang masih menjadi masalah?",
+    "a": [
+      "Karya yang dibuat pasti tidak memiliki nilai",
+      "Penggunaan software tetap perlu sesuai lisensi meskipun karya yang dihasilkan adalah orisinal",
+      "Karya otomatis menjadi milik software",
+      "Software bajakan membuat desain lebih baik"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan aset yang lisensinya memperbolehkan penggunaan komersial tetapi melarang redistribusi file asli. Ia menggunakan aset tersebut dalam poster dan menjual poster, bukan file asetnya. Apa yang harus diperhatikan?",
+    "a": [
+      "Perbedaan antara menggunakan aset sebagai bagian dari karya dan menjual ulang file aset perlu dilihat sesuai ketentuan lisensi",
+      "Lisensi otomatis melarang semua penggunaan",
+      "Aset menjadi milik siswa setelah dimasukkan ke poster",
+      "Semua redistribusi selalu diperbolehkan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin mengembangkan desain berdasarkan beberapa referensi dari internet. Ia membuat sketsa sendiri sebelum mulai mendesain. Apa manfaat pendekatan tersebut?",
+    "a": [
+      "Membantu mengembangkan gagasan sendiri daripada sekadar menyalin referensi",
+      "Membuat semua referensi menjadi milik siswa",
+      "Menghilangkan kebutuhan memeriksa lisensi",
+      "Membuat semua gambar internet bebas"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer memiliki tiga pilihan foto untuk brosur komersial. Foto A memiliki lisensi pribadi, Foto B tidak diketahui sumbernya, dan Foto C memiliki lisensi komersial yang jelas. Berdasarkan informasi tersebut, pertimbangan yang paling kuat adalah...",
+    "a": [
+      "Foto A karena gratis",
+      "Foto B karena tidak ada watermark",
+      "Foto C karena dasar penggunaan komersialnya jelas",
+      "Semua foto sama saja"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggunakan foto yang diperbolehkan untuk komersial dengan atribusi. Ia kemudian mencantumkan kredit pada halaman akhir katalog. Apa yang masih perlu dipastikan?",
+    "a": [
+      "Bahwa format dan isi atribusi memenuhi ketentuan lisensi",
+      "Bahwa foto diubah menjadi JPG",
+      "Bahwa nama fotografer dihapus dari file",
+      "Bahwa foto dicetak hitam putih"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan aset dengan lisensi yang tidak mengizinkan penggunaan komersial. Guru meminta siswa membuat desain untuk simulasi iklan produk yang akan dinilai di kelas. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Mengabaikan lisensi karena hanya simulasi",
+      "Memeriksa konteks penggunaan yang diizinkan dan memilih aset yang lebih sesuai jika diperlukan",
+      "Menghapus nama pencipta",
+      "Menjual desain tersebut"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat poster dan menggunakan foto orang lain. Ia sudah meminta izin untuk menggunakan foto tersebut, tetapi izin hanya diberikan untuk tugas kelas. Apa yang harus dilakukan jika poster akan diunggah ke akun bisnis?",
+    "a": [
+      "Mengunggah karena izin sudah ada",
+      "Meminta izin untuk penggunaan pada konteks bisnis atau menggunakan foto lain",
+      "Menghapus nama fotografer",
+      "Mengubah warna foto"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin menunjukkan kemampuan desain kepada calon klien dengan menampilkan karya yang dibuat untuk sekolah. Apa yang sebaiknya dipastikan sebelum memasukkannya ke portofolio?",
+    "a": [
+      "Bahwa ia memang membuat karya tersebut dan publikasinya sesuai izin atau kesepakatan yang berlaku",
+      "Bahwa semua karya sekolah otomatis boleh dipublikasikan",
+      "Bahwa nama sekolah dihapus",
+      "Bahwa file sumber diberikan kepada semua orang"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain berdasarkan karya orang lain dan hanya mengganti warna, teks, serta beberapa gambar. Ia kemudian menjualnya sebagai desain orisinal. Mengapa tindakan tersebut perlu dipermasalahkan?",
+    "a": [
+      "Desain tidak boleh menggunakan warna",
+      "Perubahan beberapa elemen tidak otomatis membuat karya asli kehilangan haknya",
+      "Semua desain harus dibuat tanpa referensi",
+      "Karya yang dijual otomatis menjadi bebas hak cipta"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan font yang sangat bagus tetapi tidak ada informasi lisensi di website tempat ia mengunduhnya. Ia ingin menggunakannya dalam identitas visual sebuah usaha. Apa pilihan paling aman?",
+    "a": [
+      "Menggunakan karena font tersedia gratis",
+      "Menggunakan dan menghapus nama pembuat",
+      "Mencari sumber resmi atau font alternatif dengan lisensi yang jelas",
+      "Mengubah nama font"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer membuat karya dengan beberapa aset berlisensi. Ketika proyek selesai, ia menyimpan salinan lisensi dan bukti pembelian dalam satu folder. Mengapa kebiasaan ini bermanfaat?",
+    "a": [
+      "Mempermudah pengelolaan dan pembuktian dasar penggunaan aset di kemudian hari",
+      "Membuat semua aset menjadi milik desainer",
+      "Menghapus kebutuhan terhadap kontrak",
+      "Membuat karya otomatis bebas hak cipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa melihat temannya menyalin desain dari internet dan berkata bahwa tindakan tersebut tidak masalah selama tidak ada yang mengetahui. Dari sudut pandang profesional, respons yang tepat adalah...",
+    "a": [
+      "Menyalin boleh selama tidak ketahuan",
+      "Sebaiknya karya dikembangkan secara orisinal dan penggunaan aset pihak lain dilakukan sesuai izin atau lisensi",
+      "Watermark boleh dihapus",
+      "Karya internet otomatis bebas digunakan"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain untuk tugas sekolah dengan menggunakan foto dari website yang mencantumkan lisensi CC BY. Ia ingin mengubah foto tersebut secara signifikan. Apa yang harus diperiksa selain kewajiban atribusi?",
+    "a": [
+      "Apakah lisensi tersebut mengizinkan perubahan atau karya turunan",
+      "Apakah foto memiliki resolusi 4K",
+      "Apakah website menggunakan warna biru",
+      "Apakah nama file foto pendek"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan aset CC dengan tanda NC untuk desain yang akan dijual. Apa yang harus menjadi perhatian utama?",
+    "a": [
+      "NC berkaitan dengan pembatasan penggunaan komersial sehingga lisensinya perlu diperiksa atau aset lain dipilih",
+      "NC berarti kualitas rendah",
+      "NC berarti No Color",
+      "NC berarti aset otomatis menjadi milik pengguna"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan aset CC dengan tanda ND dan ingin mengeditnya menjadi bagian dari desain baru. Apa langkah yang tepat?",
+    "a": [
+      "Langsung mengedit karena semua CC bebas diubah",
+      "Memeriksa ketentuan ND dan memilih aset lain jika penggunaan yang direncanakan tidak diperbolehkan",
+      "Menghapus tanda ND",
+      "Mengganti nama pencipta"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan aset CC dengan tanda SA sebagai bagian dari karya yang akan dibagikan. Apa yang perlu diperhatikan?",
+    "a": [
+      "Ketentuan ShareAlike dapat mengatur bagaimana karya turunan dibagikan",
+      "SA berarti aset tidak boleh digunakan",
+      "SA berarti aset menjadi milik sekolah",
+      "SA berarti tidak perlu atribusi"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer mendapat proyek dengan deadline besok. Ia menemukan gambar yang sangat sesuai tetapi lisensinya tidak jelas. Ia memilih gambar lain yang sedikit kurang sesuai tetapi memiliki lisensi yang jelas. Dari sisi pengelolaan proyek, keputusan tersebut menunjukkan...",
+    "a": [
+      "Mengutamakan penggunaan aset yang dapat dipertanggungjawabkan",
+      "Desainer tidak mampu mencari gambar",
+      "Semua gambar dengan lisensi jelas pasti lebih bagus",
+      "Desainer tidak boleh menggunakan gambar"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat poster dengan karya orang lain dan menuliskan nama pencipta, tetapi ia mengatakan kepada gurunya bahwa karya tersebut dibuat sendiri. Mengapa hal tersebut tetap tidak tepat?",
+    "a": [
+      "Mencantumkan sumber tidak berarti boleh mengklaim diri sebagai pencipta karya orang lain",
+      "Nama pencipta tidak boleh dicantumkan",
+      "Semua karya harus anonim",
+      "Atribusi menghapus hak pencipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan template desain yang dibeli untuk beberapa proyek klien. Sebelum menggunakannya berulang kali, apa yang perlu diperiksa?",
+    "a": [
+      "Apakah lisensi mengizinkan jumlah dan jenis penggunaan yang direncanakan",
+      "Apakah template memiliki warna favorit siswa",
+      "Apakah file dapat dibuka di komputer sekolah",
+      "Apakah template memiliki watermark"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer membuat logo dan menyerahkan file JPG kepada klien. Klien kemudian meminta file AI agar dapat mengeditnya sendiri. Apa hal yang sebaiknya sudah ditentukan sejak awal?",
+    "a": [
+      "Jenis file yang akan diserahkan dan ketentuan penggunaan atau kepemilikannya",
+      "Jenis mouse yang digunakan",
+      "Warna meja kerja",
+      "Ukuran monitor"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan gambar yang memiliki watermark karena menurutnya watermark dapat dihapus dengan mudah. Apa prinsip yang seharusnya diterapkan?",
+    "a": [
+      "Kemudahan menghapus watermark bukan berarti pengguna memperoleh hak atas gambar",
+      "Semua watermark boleh dihapus",
+      "Watermark hanya hiasan",
+      "Gambar tanpa watermark otomatis menjadi domain publik"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan aset yang tidak memiliki watermark dan menganggapnya bebas. Apa kesimpulan yang benar?",
+    "a": [
+      "Tidak adanya watermark tidak otomatis berarti aset bebas digunakan",
+      "Semua aset tanpa watermark adalah domain publik",
+      "Watermark adalah satu-satunya bukti hak cipta",
+      "Aset tanpa watermark boleh dijual ulang"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menggunakan gambar dari Pinterest untuk desain komersial setelah menemukan gambar tersebut melalui pencarian. Apa langkah yang masih diperlukan?",
+    "a": [
+      "Menghapus logo Pinterest",
+      "Mencari sumber asli dan memastikan lisensi atau izin penggunaannya",
+      "Mengubah ukuran gambar",
+      "Mengganti nama file"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer ingin membuat desain yang terinspirasi dari tren visual tertentu. Ia mengumpulkan beberapa referensi, kemudian membuat sketsa dan konsep baru. Apa manfaat proses tersebut?",
+    "a": [
+      "Membantu menghasilkan karya orisinal berdasarkan pemahaman terhadap referensi",
+      "Membuat semua referensi menjadi milik desainer",
+      "Menghapus kebutuhan atribusi",
+      "Membuat karya orang lain bebas disalin"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat karya menggunakan foto, font, musik, dan ikon dari sumber berbeda. Ia hanya mencatat sumber foto. Apa yang seharusnya dilakukan?",
+    "a": [
+      "Mencatat dan memeriksa sumber serta lisensi semua aset yang digunakan",
+      "Menghapus semua sumber",
+      "Hanya font yang perlu diperiksa",
+      "Semua aset lain otomatis bebas"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer mendapat permintaan membuat brosur menggunakan foto dari fotografer lain. Klien mengatakan foto tersebut sudah lama ada di internet. Apa respons profesional?",
+    "a": [
+      "Menggunakan karena sudah lama berada di internet",
+      "Memeriksa sumber, hak, dan izin penggunaan foto tersebut",
+      "Menghapus watermark",
+      "Mengubah format foto"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat poster dengan menggunakan karya temannya. Temannya mengizinkan penggunaan tetapi meminta namanya tetap dicantumkan. Siswa kemudian menghapus nama tersebut karena dianggap mengganggu desain. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Menghormati syarat izin dan mencari penempatan kredit yang tetap sesuai desain",
+      "Menghapus nama karena desain lebih penting",
+      "Mengganti nama teman dengan nama siswa",
+      "Menganggap izin otomatis menghapus syarat"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menggunakan software desain berbayar dengan lisensi resmi. Ia kemudian menemukan plugin bajakan dan memasangnya agar mendapatkan fitur tambahan. Apa yang perlu diperhatikan?",
+    "a": [
+      "Plugin bajakan tetap dapat menimbulkan masalah lisensi dan keamanan",
+      "Plugin menjadi legal karena software utamanya resmi",
+      "Semua plugin gratis untuk software berbayar",
+      "Plugin bajakan tidak memiliki risiko"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin membuat portofolio dan memasukkan karya kelompok. Salah satu anggota tidak memberikan izin untuk publikasi. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Mengunggah karena karya dibuat bersama",
+      "Menghargai keberatan tersebut dan memperjelas izin sebelum mempublikasikannya",
+      "Menghapus nama anggota tersebut",
+      "Mengklaim karya sebagai milik ketua"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain untuk lomba dan menggunakan aset yang lisensinya hanya untuk penggunaan pribadi. Karena desain tidak dijual, ia menganggap aman. Apa yang perlu dilakukan?",
+    "a": [
+      "Tetap memeriksa apakah konteks lomba sesuai dengan batasan lisensi",
+      "Menganggap semua kegiatan lomba sebagai penggunaan pribadi",
+      "Menghapus nama pencipta",
+      "Mengubah aset menjadi PNG"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menggunakan foto dengan izin terbatas untuk satu media, tetapi kemudian klien ingin menggunakan foto yang sama di media lain. Apa yang harus dilakukan?",
+    "a": [
+      "Menggunakan karena izin awal berlaku untuk semua media",
+      "Memeriksa apakah media baru tercakup dalam lisensi atau meminta izin tambahan",
+      "Menghapus watermark",
+      "Mengubah resolusi"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan aset dengan lisensi yang jelas dan menyimpan halaman lisensi serta bukti unduhan. Jika terjadi pertanyaan di kemudian hari, dokumentasi tersebut dapat...",
+    "a": [
+      "Membantu menunjukkan informasi penggunaan yang diketahui saat aset diperoleh",
+      "Membuat aset otomatis menjadi milik siswa",
+      "Menghapus hak pencipta",
+      "Membuat semua penggunaan tanpa batas"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan karya orang lain sebagai bagian dari desain tetapi tidak yakin apakah lisensinya mengizinkan. Apa pilihan paling bertanggung jawab?",
+    "a": [
+      "Tetap menggunakan karena desainnya hanya tugas",
+      "Menghapus nama pencipta",
+      "Mencari informasi lisensi, meminta izin, atau memilih aset alternatif",
+      "Mengubah warna karya"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer membuat desain promosi dengan menggunakan foto yang lisensinya mengizinkan penggunaan komersial. Namun lisensi tersebut mewajibkan atribusi. Klien tidak ingin mencantumkan kredit. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Menghapus kredit karena klien membayar",
+      "Menjelaskan kewajiban lisensi dan mencari solusi yang tetap memenuhi ketentuan",
+      "Mengganti nama fotografer dengan nama perusahaan",
+      "Mengabaikan lisensi"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat karya dengan menggunakan aset berlisensi dan kemudian menjual file proyek lengkap yang berisi aset asli secara terpisah. Mengapa hal tersebut perlu diperiksa?",
+    "a": [
+      "Lisensi penggunaan aset dalam sebuah karya tidak selalu mengizinkan redistribusi file aset asli",
+      "Semua aset yang sudah dibeli boleh dijual ulang",
+      "File proyek otomatis menjadi domain publik",
+      "Penjualan file selalu diperbolehkan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan ilustrasi dari internet untuk tugas. Ia menemukan dua ilustrasi dengan kualitas sama. Ilustrasi A memiliki sumber dan lisensi jelas, sedangkan ilustrasi B tidak diketahui sumbernya. Pilihan yang lebih dapat dipertanggungjawabkan adalah...",
+    "a": [
+      "Ilustrasi B karena tidak ada watermark",
+      "Ilustrasi A karena sumber dan ketentuan penggunaannya dapat diperiksa",
+      "Keduanya sama",
+      "Ilustrasi B karena lebih mudah diunduh"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain sendiri tetapi mengambil ikon dari library yang tidak mengizinkan penggunaan pada logo. Ia kemudian memasukkan ikon tersebut ke logo klien. Apa yang perlu dilakukan?",
+    "a": [
+      "Tetap menggunakan karena ikon hanya sebagian kecil",
+      "Memeriksa kembali lisensi dan mengganti atau memperoleh izin yang sesuai",
+      "Menghapus nama library",
+      "Mengubah warna ikon"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mengatakan bahwa mencantumkan sumber berarti ia boleh menggunakan karya orang lain untuk tujuan apa pun. Mengapa pernyataan tersebut salah?",
+    "a": [
+      "Atribusi tidak otomatis menghapus batasan lain yang ditetapkan oleh lisensi",
+      "Sumber tidak pernah boleh dicantumkan",
+      "Semua karya tidak memiliki lisensi",
+      "Atribusi membuat karya menjadi milik pengguna"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggunakan karya orang lain yang lisensinya melarang penggunaan komersial. Ia ingin menjual hasil desain tersebut. Apa langkah yang tepat?",
+    "a": [
+      "Tetap menjual karena karya sudah diubah",
+      "Mencari izin atau aset dengan lisensi yang mengizinkan penggunaan komersial",
+      "Menghapus atribusi",
+      "Mengubah nama file"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat karya orisinal dan ingin melindungi bukti proses pembuatannya. Dari beberapa pilihan berikut, mana yang paling membantu?",
+    "a": [
+      "Menghapus semua file lama",
+      "Menyimpan sketsa, file sumber, versi pekerjaan, dan dokumentasi tanggal",
+      "Hanya menyimpan JPG akhir",
+      "Menghapus metadata"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer bekerja dengan klien dan menemukan bahwa klien memberikan foto yang ternyata berasal dari fotografer lain. Apa yang sebaiknya dilakukan sebelum foto tersebut digunakan?",
+    "a": [
+      "Menganggap klien otomatis memiliki semua hak",
+      "Memastikan dasar izin atau hak penggunaan foto tersebut",
+      "Menghapus nama fotografer",
+      "Mengubah format foto"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan foto yang boleh digunakan tetapi hanya untuk penggunaan nonkomersial. Ia menggunakannya dalam poster kegiatan sekolah yang dibuat untuk tugas kelas tanpa dijual. Apa yang tetap perlu diperiksa?",
+    "a": [
+      "Apakah konteks penggunaan benar-benar sesuai dengan batasan lisensi",
+      "Apakah foto memiliki resolusi tinggi",
+      "Apakah poster menggunakan warna RGB",
+      "Apakah foto ditemukan di Google"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain yang terinspirasi dari beberapa karya. Ia sengaja menghindari menyalin logo, ilustrasi, dan layout secara persis. Mengapa pendekatan tersebut penting?",
+    "a": [
+      "Agar referensi tidak pernah digunakan",
+      "Agar karya berkembang menjadi konsep baru dan tidak sekadar menyalin elemen terlindungi",
+      "Agar semua karya menjadi domain publik",
+      "Agar desain tidak memiliki identitas"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menggunakan karya orang lain sesuai lisensi tetapi lupa menyimpan bukti lisensinya. Apa risiko praktis dari kebiasaan tersebut?",
+    "a": [
+      "Sulit menunjukkan kembali dasar atau ketentuan penggunaan ketika diperlukan",
+      "Karya otomatis menjadi ilegal",
+      "Hak pencipta langsung hilang",
+      "File otomatis rusak"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menggunakan beberapa aset dari sumber berbeda untuk membuat kemasan. Sebelum produksi massal, ia melakukan pemeriksaan lisensi terakhir. Mengapa langkah tersebut penting?",
+    "a": [
+      "Produksi massal dapat memperluas penggunaan aset sehingga kesesuaian lisensi perlu dipastikan",
+      "Lisensi hanya berlaku sebelum desain selesai",
+      "Kemasan tidak boleh menggunakan aset digital",
+      "Semua produksi massal otomatis bebas hak cipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan foto milik fotografer lain untuk poster sekolah. Ia menghubungi fotografer dan mendapat izin dengan syarat nama fotografer dicantumkan. Apa tindakan yang benar?",
+    "a": [
+      "Menggunakan foto tanpa kredit",
+      "Mengikuti syarat izin dan mencantumkan nama fotografer",
+      "Mengganti nama fotografer dengan nama sekolah",
+      "Menghapus watermark"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain dan menggunakan font dengan lisensi komersial. Ia kemudian memberikan file font kepada teman yang tidak memiliki lisensi tersebut. Apa yang perlu diperiksa?",
+    "a": [
+      "Apakah lisensi mengizinkan redistribusi atau berbagi file font",
+      "Apakah font memiliki warna yang bagus",
+      "Apakah file font berukuran kecil",
+      "Apakah font digunakan dalam Photoshop"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer diminta klien untuk menghapus watermark dari foto stok sebelum digunakan. Apa respons yang paling tepat?",
+    "a": [
+      "Menghapus watermark agar desain terlihat profesional",
+      "Memeriksa apakah foto sudah memiliki lisensi yang sesuai atau mencari versi yang resmi",
+      "Memotong watermark",
+      "Mengubah foto menjadi ilustrasi"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan foto yang ditemukan di website pribadi fotografer. Tidak ada keterangan lisensi. Apa langkah paling aman?",
+    "a": [
+      "Menganggap foto bebas karena ada di website",
+      "Menggunakan foto selama tidak dijual",
+      "Meminta izin atau mencari keterangan penggunaan yang jelas",
+      "Menghapus watermark"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang siswa membuat poster dengan menggunakan karya temannya. Ia mengatakan bahwa karena mereka berteman, izin tidak diperlukan. Mengapa alasan tersebut tidak tepat?",
+    "a": [
+      "Hubungan pertemanan tidak otomatis menentukan hak penggunaan karya",
+      "Teman tidak boleh membuat karya",
+      "Semua karya teman harus dibeli",
+      "Izin hanya diperlukan untuk perusahaan"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin membuat desain promosi dengan menggunakan ilustrasi berlisensi CC. Ia memeriksa tanda BY, NC, SA, dan ND sebelum memutuskan menggunakan aset tersebut. Mengapa pemeriksaan tersebut penting?",
+    "a": [
+      "Untuk memahami syarat penggunaan yang melekat pada lisensi",
+      "Untuk mengubah lisensi menjadi miliknya",
+      "Untuk menghapus nama pencipta",
+      "Untuk memastikan ilustrasi memiliki resolusi tinggi"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan aset yang boleh digunakan secara komersial tetapi wajib memberikan atribusi. Ia kemudian menjual desain tanpa mencantumkan atribusi. Apa kesimpulan yang paling tepat?",
+    "a": [
+      "Penggunaan tetap perlu memenuhi syarat atribusi meskipun penggunaan komersial diperbolehkan",
+      "Izin komersial otomatis menghapus atribusi",
+      "Penjualan membuat semua lisensi tidak berlaku",
+      "Atribusi hanya diperlukan untuk tugas sekolah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan karya yang memiliki lisensi jelas, tetapi lisensi tersebut tidak mengizinkan perubahan. Ia ingin mengubah warna, memotong gambar, dan menambahkan elemen lain. Apa keputusan yang paling tepat?",
+    "a": [
+      "Tetap mengubah karena hanya warna yang diubah",
+      "Memeriksa batasan lisensi dan memilih aset yang mengizinkan modifikasi jika diperlukan",
+      "Menghapus nama pencipta",
+      "Mengubah format file terlebih dahulu"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer membuat karya untuk klien dan kontraknya tidak menjelaskan apakah desainer boleh memasukkan karya tersebut ke portofolio. Setelah proyek selesai, desainer ingin mempublikasikannya. Apa tindakan yang paling tepat?",
+    "a": [
+      "Langsung mengunggah karena desainer yang membuat",
+      "Mengklarifikasi izin publikasi dengan klien sebelum memasukkannya ke portofolio",
+      "Mengunggah tanpa nama klien",
+      "Mengubah warna desain"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat poster dengan menggunakan foto yang lisensinya hanya untuk penggunaan editorial. Ia berencana menggunakannya untuk iklan produk sekolah. Apa yang seharusnya dilakukan?",
+    "a": [
+      "Menggunakan karena foto hanya sebagai background",
+      "Memastikan ada izin/lisensi yang sesuai untuk iklan atau mengganti foto",
+      "Menghapus watermark",
+      "Mengubah foto menjadi hitam putih"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menemukan gambar di Google Images dan kemudian menemukan sumber asli yang memberikan lisensi penggunaan. Mengapa sumber asli lebih penting daripada halaman hasil pencarian?",
+    "a": [
+      "Sumber asli lebih memungkinkan pengguna mengetahui pencipta dan ketentuan penggunaan",
+      "Google tidak dapat menampilkan gambar",
+      "Semua halaman hasil pencarian ilegal",
+      "Google selalu memiliki gambar tersebut"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggabungkan foto sendiri, font berlisensi, dan ikon dari library. Ia ingin menjual desain tersebut. Apa langkah terakhir yang paling tepat sebelum penjualan?",
+    "a": [
+      "Memastikan hak dan lisensi setiap aset sesuai dengan tujuan penjualan",
+      "Menghapus semua sumber",
+      "Mengklaim semua aset sebagai karya sendiri",
+      "Mengubah seluruh desain menjadi JPG"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa diminta membuat desain menggunakan logo sponsor. Logo tersebut memiliki pedoman yang melarang perubahan proporsi. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Mengubah proporsi agar sesuai layout",
+      "Mengikuti pedoman penggunaan logo",
+      "Menggambar ulang dengan bentuk baru",
+      "Mengubah warna tanpa izin"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menggunakan foto yang dibeli klien, tetapi tidak mengetahui apakah lisensi mencakup penggunaan pada kemasan. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Menggunakan karena klien sudah membayar",
+      "Memeriksa lisensi atau bukti hak penggunaan sebelum memasukkannya ke kemasan",
+      "Menghapus metadata",
+      "Mengubah foto menjadi ilustrasi"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa menyatakan bahwa plagiarisme sama dengan mencari inspirasi. Apa perbedaan yang paling tepat?",
+    "a": [
+      "Inspirasi dikembangkan menjadi gagasan baru, sedangkan plagiarisme melibatkan pengambilan karya secara tidak semestinya dan pengakuan yang menyesatkan",
+      "Inspirasi selalu dilarang",
+      "Plagiarisme selalu menghasilkan karya baru",
+      "Keduanya selalu sama"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat karya sendiri tetapi mengambil ilustrasi orang lain dan menghapus nama penciptanya. Apa yang sebaiknya dilakukan agar proyek lebih profesional?",
+    "a": [
+      "Tetap menggunakan karena ilustrasi hanya bagian kecil",
+      "Menggunakan aset dengan izin yang sesuai dan memenuhi ketentuan atribusi jika diwajibkan",
+      "Mengklaim seluruh ilustrasi sebagai karya sendiri",
+      "Menghapus semua sumber"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa mendapat tugas membuat desain yang akan dicetak pada merchandise sekolah. Ia ingin menggunakan gambar yang ditemukan di internet. Apa pertimbangan yang paling penting?",
+    "a": [
+      "Apakah gambar memiliki izin/lisensi yang sesuai untuk penggunaan pada merchandise",
+      "Apakah gambar muncul di halaman pertama Google",
+      "Apakah gambar tidak memiliki watermark",
+      "Apakah gambar berukuran besar"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menerima proyek dan klien meminta semua aset diperoleh dari internet secara gratis. Apa respons profesional yang paling tepat?",
+    "a": [
+      "Mengambil aset apa pun yang terlihat gratis",
+      "Menjelaskan pentingnya memilih aset dengan lisensi yang sesuai, termasuk aset gratis yang memiliki izin jelas",
+      "Menggunakan gambar tanpa watermark",
+      "Menggunakan hasil pencarian pertama"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa ingin menjual desain yang menggunakan template. Ia sudah membaca lisensi dan memastikan penggunaan komersial diperbolehkan, tetapi template tidak boleh dijual kembali sebagai template. Apa yang sebaiknya dilakukan?",
+    "a": [
+      "Menjual desain jadi sesuai lisensi tanpa menjual ulang file template sebagai aset terpisah",
+      "Menjual file template asli",
+      "Menghapus nama pembuat template",
+      "Menganggap semua batasan lisensi tidak berlaku"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat karya menggunakan aset orang lain dan mengatakan bahwa karena ia sudah mengeditnya, ia tidak perlu mencantumkan sumber. Apa yang sebaiknya dipahami?",
+    "a": [
+      "Editing otomatis menghapus kewajiban atribusi",
+      "Kewajiban atribusi tetap dapat berlaku sesuai lisensi aset",
+      "Sumber hanya diperlukan untuk foto",
+      "Nama pencipta harus selalu dihapus setelah editing"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang desainer menemukan aset yang lisensinya mengizinkan penggunaan komersial tetapi memiliki batasan tertentu untuk produk fisik. Ia ingin menggunakan aset tersebut pada kemasan. Apa langkah yang tepat?",
+    "a": [
+      "Membaca batasan tersebut dan memastikan penggunaan pada kemasan diperbolehkan",
+      "Mengabaikan karena lisensi menyebut komersial",
+      "Menghapus informasi lisensi",
+      "Mengubah ukuran aset"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan foto orang lain dalam video promosi sekolah. Ia menemukan foto tersebut di akun publik dan tidak menemukan lisensi. Apa tindakan yang paling bertanggung jawab?",
+    "a": [
+      "Menggunakan karena akun bersifat publik",
+      "Meminta izin atau mencari sumber dengan lisensi yang jelas",
+      "Menghapus watermark",
+      "Mengubah warna foto"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat desain dan menyimpan daftar semua sumber aset. Ketika salah satu lisensi berubah di website, ia dapat menunjukkan informasi lisensi yang diperoleh saat menggunakan aset. Apa manfaat dokumentasi tersebut?",
+    "a": [
+      "Membantu menjaga catatan mengenai dasar penggunaan aset",
+      "Membuat semua lisensi tidak berlaku",
+      "Mengubah hak cipta menjadi milik siswa",
+      "Membuat aset bebas komersial"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan foto yang ditemukan di internet untuk desain tugas. Ia tidak menemukan informasi pencipta maupun lisensi. Apa pilihan yang paling aman?",
+    "a": [
+      "Menggunakan karena tidak ada yang mengklaim",
+      "Menghapus watermark jika ada",
+      "Mencari aset alternatif dengan sumber dan lisensi yang jelas",
+      "Mengklaim foto sebagai karya sendiri"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer membuat desain berdasarkan beberapa referensi visual. Ia menggunakan prinsip warna dan komposisi dari referensi tetapi membuat elemen visual sendiri. Apa yang menunjukkan proses tersebut lebih dekat pada inspirasi daripada penyalinan?",
+    "a": [
+      "Mengembangkan konsep dan elemen baru berdasarkan pemahaman terhadap referensi",
+      "Menyalin layout persis",
+      "Mengambil ilustrasi asli",
+      "Menghapus nama pembuat referensi"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa mendapat proyek membuat poster untuk kegiatan sekolah. Ia menggunakan font yang hanya boleh digunakan secara pribadi. Poster tersebut akan dicetak dan dijual untuk menggalang dana. Apa yang harus dilakukan?",
+    "a": [
+      "Menggunakan karena kegiatan sekolah bukan bisnis",
+      "Memeriksa apakah penggunaan tersebut sesuai lisensi atau mengganti font dengan lisensi yang sesuai",
+      "Menghapus nama pembuat font",
+      "Mengubah font menjadi gambar"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat poster menggunakan foto yang memiliki lisensi komersial tetapi mewajibkan atribusi. Ia mencantumkan nama fotografer sesuai aturan. Apa yang masih perlu diperhatikan?",
+    "a": [
+      "Ketentuan lain dalam lisensi tetap harus dipenuhi jika ada",
+      "Tidak ada aturan lain karena atribusi sudah diberikan",
+      "Foto otomatis menjadi milik siswa",
+      "Lisensi berhenti berlaku setelah poster selesai"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang desainer menerima permintaan dari klien untuk menggunakan foto yang ditemukan di media sosial. Klien tidak memiliki informasi tentang fotografer. Apa tindakan profesional?",
+    "a": [
+      "Mengambil foto karena media sosial bersifat publik",
+      "Mencari sumber asli atau meminta klien memberikan bukti hak penggunaan",
+      "Menghapus watermark",
+      "Mengubah foto menjadi vector"
+    ],
+    "c": 1
+  },
+  {
+    "q": "Seorang siswa membuat karya orisinal dan mempublikasikannya di media sosial. Temannya kemudian mengambil karya tersebut dan menghapus nama pembuat. Mengapa tindakan temannya bermasalah?",
+    "a": [
+      "Menghapus atribusi dapat menghilangkan pengakuan terhadap pencipta dan tidak otomatis memberikan hak kepada pengambil",
+      "Karya media sosial selalu bebas",
+      "Nama pembuat tidak pernah penting",
+      "Menghapus nama membuat karya menjadi domain publik"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan aset desain dari internet untuk tugas dan menemukan informasi lisensi yang berbeda antara halaman resmi dan website repost. Sumber mana yang sebaiknya lebih diprioritaskan untuk diperiksa?",
+    "a": [
+      "Website repost karena lebih mudah",
+      "Komentar pengguna",
+      "Sumber resmi pencipta atau penyedia aset",
+      "Hasil pencarian pertama"
+    ],
+    "c": 2
+  },
+  {
+    "q": "Seorang desainer membuat desain dengan aset yang semuanya memiliki lisensi jelas. Ia tetap menyimpan sumber dan bukti lisensi. Mengapa hal tersebut tetap diperlukan?",
+    "a": [
+      "Dokumentasi membantu pengelolaan proyek dan pembuktian dasar penggunaan aset",
+      "Lisensi jelas berarti tidak boleh didokumentasikan",
+      "Sumber hanya diperlukan jika ada masalah",
+      "Dokumentasi membuat karya menjadi lebih mahal"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan foto yang boleh digunakan untuk tujuan pribadi dan ingin memasukkannya ke portofolio profesional yang dipublikasikan untuk mendapatkan klien. Apa yang perlu diperhatikan?",
+    "a": [
+      "Portofolio profesional dapat memiliki konteks penggunaan yang berbeda sehingga lisensinya perlu diperiksa",
+      "Semua portofolio otomatis pribadi",
+      "Foto otomatis bebas jika tidak dijual langsung",
+      "Menghapus nama fotografer menyelesaikan masalah"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan mengambil gambar dari internet lalu mengubahnya menjadi vector. Ia beranggapan gambar tersebut kini menjadi miliknya. Apa yang perlu dipahami?",
+    "a": [
+      "Konversi ke vector tidak otomatis memindahkan hak pencipta atau menghapus hak atas karya asli",
+      "Semua vector bebas digunakan",
+      "JPG selalu bebas dikonversi",
+      "Perubahan format otomatis menghapus hak cipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa ingin menggunakan gambar dengan lisensi CC BY-SA untuk membuat karya turunan yang akan dibagikan. Selain atribusi, apa yang perlu diperhatikan?",
+    "a": [
+      "Ketentuan ShareAlike terkait pembagian karya turunan",
+      "Larangan penggunaan warna",
+      "Larangan menyimpan file",
+      "Kewajiban menghapus nama pencipta"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa menemukan aset CC BY-NC-ND dan ingin mengubahnya menjadi bagian dari iklan komersial. Mengapa aset tersebut tidak langsung sesuai dengan kebutuhan?",
+    "a": [
+      "Lisensi tersebut memiliki batasan terkait penggunaan komersial dan karya turunan",
+      "CC selalu berarti bebas untuk semua penggunaan",
+      "Aset tersebut hanya tidak boleh dicetak",
+      "Atribusi membuat semua batasan hilang"
+    ],
+    "c": 0
+  },
+  {
+    "q": "Seorang siswa membuat desain dengan menggunakan karya orang lain sesuai lisensi. Ia kemudian menyimpan catatan sumber, atribusi, dan bukti izin. Kebiasaan tersebut paling mencerminkan...",
+    "a": [
+      "Sikap profesional dalam pengelolaan kekayaan intelektual",
+      "Usaha menghindari kreativitas",
+      "Ketergantungan pada karya orang lain",
+      "Ketidakmampuan membuat desain"
+    ],
+    "c": 0
+  }
+];
+const TOTAL = 30;
+const EXAM_MINUTES = 30;
+let exam=[], answers=[], current=0, remaining=EXAM_MINUTES*60, timerId=null;
+let studentName="", studentClass="", studentCode="";
+
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){return function(){seed+=0x6D2B79F5;let t=seed; t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296}}
+function shuffle(arr,r){for(let i=arr.length-1;i>0;i--){let j=Math.floor(r()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+
+function startExam(){
+ studentName=document.getElementById('name').value.trim();
+ studentClass=document.getElementById('class').value.trim();
+ studentCode=document.getElementById('code').value.trim();
+ const code=document.getElementById('code').value.trim();
+ if(!studentName||!studentClass||!code){document.getElementById('startMsg').textContent='Lengkapi nama, kelas, dan kode ujian.';return}
+ const seed=hash(studentName+'|'+studentClass+'|'+code);
+ const r=rng(seed);
+ let pool=[...Array(BANK.length).keys()];
+ shuffle(pool,r);
+ exam=pool.slice(0,TOTAL).map(i=>{
+   const item=BANK[i];
+   let opts=item.a.map((text,j)=>({text,correct:j===item.c}));
+   shuffle(opts,r);
+   return {q:item.q,opts};
+ });
+ answers=new Array(TOTAL).fill(null);
+ document.getElementById('start').classList.add('hidden');
+ document.getElementById('exam').classList.remove('hidden');
+ document.getElementById('student').textContent=studentName+' — '+studentClass+' — '+studentCode;
+ render();
+ timerId=setInterval(()=>{remaining--;updateTimer();if(remaining<=0)finish()},1000);
+}
+
+function updateTimer(){
+ let m=Math.floor(remaining/60),s=remaining%60;
+ document.getElementById('timer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function render(){
+ const item=exam[current];
+ document.getElementById('number').textContent='Soal '+(current+1)+' dari '+TOTAL;
+ document.getElementById('question').textContent=item.q;
+ document.getElementById('bar').style.width=((current+1)/TOTAL*100)+'%';
+ const box=document.getElementById('options');box.innerHTML='';
+ item.opts.forEach((o,i)=>{
+   const label=document.createElement('label');label.className='option';
+   label.innerHTML='<input type="radio" name="ans" value="'+i+'"> '+String.fromCharCode(65+i)+'. '+escapeHtml(o.text);
+   if(answers[current]===i) label.querySelector('input').checked=true;
+   label.querySelector('input').addEventListener('change',e=>answers[current]=Number(e.target.value));
+   box.appendChild(label);
+ });
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function next(){save();if(current<TOTAL-1){current++;render()}else{if(confirm('Akhiri ulangan sekarang?'))finish()}}
+function prev(){save();if(current>0){current--;render()}}
+function save(){const x=document.querySelector('input[name="ans"]:checked');if(x)answers[current]=Number(x.value)}
+function finish(){
+ save();clearInterval(timerId);
+ let correct=0;answers.forEach((v,i)=>{if(v!==null&&exam[i].opts[v].correct)correct++});
+ const score=Math.round(correct/TOTAL*100);
+ document.getElementById('exam').classList.add('hidden');
+ document.getElementById('result').classList.remove('hidden');
+ document.getElementById('resultStudent').textContent=studentName+' — '+studentClass+' — '+studentCode;
+ document.getElementById('score').textContent=score;
+ document.getElementById('resultDetail').textContent='Benar: '+correct+' dari '+TOTAL+' soal';
+}
+</script>
+</body>
+</html>
