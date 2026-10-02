@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Latihan Soal Biimplikasi</title>
+<style>
+:root{--ink:#1d2b4f;--paper:#f4f6fb;--card:#fff;--line:#d5dbea;--accent:#2f6fed;--ok:#1b8f62;--bad:#cf3f4b;--okbg:#e4f6ee;--badbg:#fbe7e9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.6}
+main{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{margin:0 0 20px;color:#4a5878}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:6px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.meta{display:flex;justify-content:space-between;font-size:.9rem;color:#4a5878;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px}
+.q{font-size:1.15rem;margin:0 0 16px}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.opt:disabled{cursor:default}
+.exp{margin-top:16px;padding:12px 14px;border-left:4px solid var(--accent);background:#eef3ff;border-radius:4px;display:none}
+.exp.show{display:block}
+.btn{margin-top:16px;font:inherit;background:var(--ink);color:#fff;border:0;border-radius:8px;padding:11px 22px;cursor:pointer}
+.btn[hidden]{display:none}
+.score{font-size:2.6rem;margin:8px 0}
+table{border-collapse:collapse;margin:12px 0;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:6px 14px;text-align:center}
+th{background:#eef3ff}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Latihan Soal Biimplikasi</h1>
+  <p class="sub">Pilih satu jawaban untuk setiap soal. Penjelasan muncul setelah kamu menjawab.</p>
+  <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+  <div class="meta"><span id="no"></span><span id="skor"></span></div>
+  <section class="card" id="box" aria-live="polite"></section>
+</main>
+
+<script>
+const soal = [
+ {q:"Biimplikasi p ⇔ q bernilai benar apabila…",
+  o:["p benar dan q salah","p dan q mempunyai nilai kebenaran yang sama","p salah dan q benar","hanya jika p dan q sama-sama benar"],
+  a:1,e:"p ⇔ q benar jika p dan q sama-sama benar atau sama-sama salah."},
+ {q:"Simbol yang digunakan untuk biimplikasi adalah…",
+  o:["⇒","∧","⇔","∨"],a:2,e:"⇔ dibaca “jika dan hanya jika”. Simbol ⇒ untuk implikasi, ∧ untuk konjungsi, ∨ untuk disjungsi."},
+ {q:"Jika p benar dan q salah, nilai kebenaran p ⇔ q adalah…",
+  o:["Benar","Salah","Tidak dapat ditentukan","Benar atau salah"],a:1,e:"Nilai p dan q berbeda, sehingga p ⇔ q bernilai salah."},
+ {q:"Jika p salah dan q salah, nilai kebenaran p ⇔ q adalah…",
+  o:["Benar","Salah","Tidak dapat ditentukan","Tergantung soal"],a:0,e:"Nilai p dan q sama (sama-sama salah), sehingga p ⇔ q bernilai benar."},
+ {q:"Pernyataan “2 + 3 = 5 jika dan hanya jika 5 adalah bilangan genap” bernilai…",
+  o:["Benar, karena 2 + 3 = 5","Benar, karena kedua pernyataan berkaitan","Salah, karena p benar dan q salah","Salah, karena p salah dan q benar"],
+  a:2,e:"p: 2 + 3 = 5 (benar). q: 5 bilangan genap (salah). Nilainya berbeda, sehingga biimplikasi bernilai salah."},
+ {q:"Pernyataan “Jakarta ada di Pulau Sumatra jika dan hanya jika 4 &lt; 2” bernilai…",
+  o:["Salah, karena kedua pernyataan tidak berhubungan","Salah, karena p salah","Benar, karena p salah dan q salah","Tidak dapat ditentukan"],
+  a:2,e:"p salah dan q salah. Nilainya sama, sehingga biimplikasi bernilai benar. Hubungan isi kalimat tidak memengaruhi nilai kebenaran."},
+ {q:"Biimplikasi p ⇔ q ekuivalen dengan…",
+  o:["(p ⇒ q) ∨ (q ⇒ p)","(p ⇒ q) ∧ (q ⇒ p)","p ∧ q","~p ∨ ~q"],
+  a:1,e:"p ⇔ q ≡ (p ⇒ q) ∧ (q ⇒ p). Biimplikasi berarti implikasi berlaku dua arah."},
+ {q:"Pada tabel kebenaran p ⇔ q dengan 4 baris, ada berapa baris yang bernilai benar?",
+  o:["1","2","3","4"],a:1,e:"Baris (B,B) dan (S,S) bernilai benar, sedangkan (B,S) dan (S,B) bernilai salah. Jadi ada 2 baris."},
+ {q:"Ingkaran dari p ⇔ q ekuivalen dengan…",
+  o:["~p ⇔ ~q","(p ∧ ~q) ∨ (~p ∧ q)","(p ∧ q) ∨ (~p ∧ ~q)","~p ∧ ~q"],
+  a:1,e:"~(p ⇔ q) benar saat p dan q berbeda nilai, yaitu (p ∧ ~q) ∨ (~p ∧ q). Ini setara dengan p ⊻ q."},
+ {q:"Kalimat “x + 2 = 5 jika dan hanya jika x = 3” untuk x bilangan real bernilai…",
+  o:["Salah untuk semua x","Benar untuk semua x","Benar hanya jika x = 3","Salah jika x ≠ 3"],
+  a:1,e:"Jika x = 3, kedua bagian benar. Jika x ≠ 3, kedua bagian salah. Nilainya selalu sama, sehingga biimplikasi benar untuk semua x."}
+];
+
+const box=document.getElementById('box'),bar=document.getElementById('bar'),
+      no=document.getElementById('no'),skor=document.getElementById('skor');
+let i=0,benar=0;
+
+function tampil(){
+  const s=soal[i];
+  no.textContent="Soal "+(i+1)+" dari "+soal.length;
+  skor.textContent="Benar: "+benar;
+  bar.style.width=(i/soal.length*100)+"%";
+  box.innerHTML='<p class="q">'+s.q+'</p><div class="opts" role="group"></div>'+
+    '<div class="exp" id="exp"></div><button class="btn" id="next" hidden></button>';
+  const wrap=box.querySelector('.opts');
+  s.o.forEach((t,k)=>{
+    const b=document.createElement('button');
+    b.className='opt';b.type='button';b.innerHTML=String.fromCharCode(65+k)+'. '+t;
+    b.onclick=()=>jawab(k);wrap.appendChild(b);
+  });
+}
+
+function jawab(k){
+  const s=soal[i],btns=box.querySelectorAll('.opt');
+  btns.forEach((b,j)=>{b.disabled=true;if(j===s.a)b.classList.add('ok');});
+  if(k===s.a){benar++;}else{btns[k].classList.add('bad');}
+  const ex=document.getElementById('exp');
+  ex.innerHTML='<strong>'+(k===s.a?'Benar.':'Kurang tepat.')+'</strong> '+s.e;
+  ex.classList.add('show');
+  skor.textContent="Benar: "+benar;
+  const n=document.getElementById('next');
+  n.textContent=i<soal.length-1?'Soal berikutnya':'Lihat hasil';
+  n.hidden=false;n.focus();
+  n.onclick=()=>{i++;i<soal.length?tampil():hasil();};
+}
+
+function hasil(){
+  bar.style.width="100%";
+  no.textContent="Selesai";
+  const nilai=Math.round(benar/soal.length*100);
+  box.innerHTML='<p class="q">Hasil latihanmu</p><div class="score">'+nilai+'</div>'+
+    '<p>'+benar+' dari '+soal.length+' soal terjawab benar.</p>'+
+    '<p>Ringkasan tabel kebenaran biimplikasi:</p>'+
+    '<table><tr><th>p</th><th>q</th><th>p ⇔ q</th></tr>'+
+    '<tr><td>B</td><td>B</td><td>B</td></tr><tr><td>B</td><td>S</td><td>S</td></tr>'+
+    '<tr><td>S</td><td>B</td><td>S</td></tr><tr><td>S</td><td>S</td><td>B</td></tr></table>'+
+    '<button class="btn" id="ulang">Ulangi latihan</button>';
+  document.getElementById('ulang').onclick=()=>{i=0;benar=0;tampil();};
+}
+tampil();
+</script>
+</body>
+</html>

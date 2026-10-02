@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pembelajaran Informatika</title>
+<style>
+:root{--navy:#0f2a43;--teal:#17788a;--mist:#eef3f7;--white:#fff;--line:#cfdbe4;--gold:#f2c14e;--text:#26384a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--mist);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;line-height:1.55}
+header{background:var(--navy);color:var(--white);padding:40px 20px 36px}
+.wrap{max-width:860px;margin:0 auto}
+header h1{margin:0 0 6px;font-family:Georgia,"Times New Roman",serif;font-size:2rem;font-weight:700}
+header p{margin:0;color:#b9cbdb;max-width:56ch}
+main{padding:28px 20px 56px}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.bab{display:grid;grid-template-columns:72px 1fr auto;align-items:center;gap:18px;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.no{font-family:Georgia,serif;font-size:2.4rem;font-weight:700;color:var(--teal);text-align:center;line-height:1}
+.no small{display:block;font-family:"Segoe UI",system-ui,sans-serif;font-size:.75rem;font-weight:600;color:#6b7f90;margin-bottom:2px}
+.bab h2{margin:0 0 2px;font-size:1.15rem;color:var(--navy)}
+.bab p{margin:0;font-size:.93rem;color:#4b5f71}
+.aksi{display:flex;gap:10px}
+.btn{display:inline-block;text-decoration:none;font:inherit;font-size:.92rem;font-weight:600;padding:9px 18px;border-radius:8px;border:2px solid var(--navy);white-space:nowrap}
+.btn.utama{background:var(--navy);color:var(--white)}
+.btn.kedua{background:var(--white);color:var(--navy)}
+.btn:hover{background:var(--gold);border-color:var(--gold);color:var(--navy)}
+.btn:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+footer{text-align:center;font-size:.85rem;color:#6b7f90;padding-bottom:28px}
+@media (max-width:680px){
+  .bab{grid-template-columns:56px 1fr;row-gap:12px}
+  .aksi{grid-column:1 / -1}
+  .btn{flex:1;text-align:center}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Informatika untuk Akuntansi dan Keuangan Lembaga</h1>
+    <p>Pilih bab yang ingin dipelajari, lalu buka materi atau kerjakan latihan soalnya.</p>
+  </div>
+</header>
+
+<main>
+  <ol class="list wrap">
+    <li class="bab">
+      <div class="no"><small>Bab</small>1</div>
+      <div>
+        <h2>Berpikir Komputasional</h2>
+        <p>Proposisi, logika, bilangan biner, dan pemecahan masalah.</p>
+      </div>
+      <div class="aksi">
+        <a class="btn utama" href="#materi-1">Materi</a>
+        <a class="btn kedua" href="soal-biimplikasi.html">Latihan Soal</a>
+      </div>
+    </li>
+
+    <li class="bab">
+      <div class="no"><small>Bab</small>2</div>
+      <div>
+        <h2>Teknologi Informasi dan Komunikasi</h2>
+        <p>Aplikasi perkantoran dan pemanfaatannya dalam pekerjaan.</p>
+      </div>
+      <div class="aksi">
+        <a class="btn utama" href="#materi-2">Materi</a>
+        <a class="btn kedua" href="#latihan-2">Latihan Soal</a>
+      </div>
+    </li>
+
+    <li class="bab">
+      <div class="no"><small>Bab</small>3</div>
+      <div>
+        <h2>Sistem Komputer</h2>
+        <p>Perangkat keras, perangkat lunak, dan cara kerjanya.</p>
+      </div>
+      <div class="aksi">
+        <a class="btn utama" href="#materi-3">Materi</a>
+        <a class="btn kedua" href="#latihan-3">Latihan Soal</a>
+      </div>
+    </li>
+
+    <li class="bab">
+      <div class="no"><small>Bab</small>4</div>
+      <div>
+        <h2>Jaringan Komputer dan Internet</h2>
+        <p>Jenis jaringan, perangkat, dan penggunaan internet yang aman.</p>
+      </div>
+      <div class="aksi">
+        <a class="btn utama" href="#materi-4">Materi</a>
+        <a class="btn kedua" href="#latihan-4">Latihan Soal</a>
+      </div>
+    </li>
+
+    <li class="bab">
+      <div class="no"><small>Bab</small>5</div>
+      <div>
+        <h2>Algoritma dan Pemrograman</h2>
+        <p>Searching, sorting, stack, dan queue dengan studi kasus akuntansi.</p>
+      </div>
+      <div class="aksi">
+        <a class="btn utama" href="#materi-5">Materi</a>
+        <a class="btn kedua" href="#latihan-5">Latihan Soal</a>
+      </div>
+    </li>
+  </ol>
+</main>
+
+<footer>Ganti nilai href pada tombol dengan alamat file materi atau latihan soal Anda.</footer>
+</body>
+</html>
